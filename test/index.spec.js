@@ -34,24 +34,19 @@
       return expect(navigator(function(makeRoute) {})).to.eql({});
     });
     return describe('When passing route paths to the fn passed as argument to the provided fn passed to .setRoutes', function() {
-      var restfulRoutes;
-      restfulRoutes = {
-        'GET /robots': 'RobotsController.index',
-        'GET /robots/new': 'RobotsController.new',
-        'POST /robots': 'RobotsController.create',
-        'GET /robots/edit/:id': 'RobotsController.edit',
-        'PUT /robots/:id': 'RobotsController.update',
-        'DELETE /robots/:id': 'RobotsController.destroy'
-      };
-
-      /*it 'should return a restful version of the passed route in a routes object', ->
-        routes = navigator (makeRoute)->
-          makeRoute('/robots')
-        expect(routes).to.eql(restfulRoutes)
-       */
       return describe('When calling sub-methods of the makeRoute fn (Which is passed by the navigator to the fn provided by the client)', function() {
-        describe('.REST', function() {
-          return describe('When passing "all" as argument', function() {
+        describe.only('.REST', function() {
+          var restfulRoutes;
+          restfulRoutes = {
+            'GET /robots': 'RobotsController.index',
+            'GET /robots/:id': 'RobotsController.show',
+            'GET /robots/new': 'RobotsController.new',
+            'POST /robots': 'RobotsController.create',
+            'GET /robots/edit/:id': 'RobotsController.edit',
+            'PUT /robots/:id': 'RobotsController.update',
+            'DELETE /robots/:id': 'RobotsController.destroy'
+          };
+          describe('When passing "all" as argument', function() {
             return it('should return a restful version of the passed route in a routes object', function() {
               var routes;
               routes = navigator(function(makeRoute) {
@@ -60,8 +55,39 @@
               return expect(routes).to.eql(restfulRoutes);
             });
           });
+          describe('When passing a list of the actions to include as argument', function() {
+            return it('should return a restful version of the passed route with only the included actions in a routes object', function() {
+              var expectedRoutes, routes;
+              routes = navigator(function(makeRoute) {
+                return makeRoute('/robots').REST('index', 'show');
+              });
+              expectedRoutes = _.pick(restfulRoutes, [
+                _.findKey(restfulRoutes, function(action) {
+                  return _.endsWith(action, 'index');
+                }), _.findKey(restfulRoutes, function(action) {
+                  return _.endsWith(action, 'show');
+                })
+              ]);
+              return expect(routes).to.eql(expectedRoutes);
+            });
+          });
+          return describe('When passing a list of the actions to exclude as argument', function() {
+            return it('should return a restful version of the passed route with all but the excluded actions in a routes object', function() {
+              var expectedRoutes, routes;
+              routes = navigator(function(makeRoute) {
+                return makeRoute('/robots').REST('!', 'destroy');
+              });
+              expectedRoutes = _.omit(restfulRoutes, _.findKey(restfulRoutes, function(action) {
+                return _.endsWith(action, 'destroy');
+              }));
+              console.inspect({
+                expectedRoutes: expectedRoutes
+              });
+              return expect(routes).to.eql(expectedRoutes);
+            });
+          });
         });
-        describe.only('.GET', function() {
+        describe('.GET', function() {
           return it('should add the custom path route (prefixed with route) to the routes object, and assigning it the defined controller action', function() {
             var routes;
             routes = navigator(function(makeRoute) {
@@ -84,7 +110,7 @@
           });
         });
         describe('.PUT', function() {
-          it('should add the custom path route (prefixed with route) to the routes object, and assigning it the defined controller action', function() {
+          return it('should add the custom path route (prefixed with route) to the routes object, and assigning it the defined controller action', function() {
             var routes;
             routes = navigator(function(makeRoute) {
               return makeRoute('/robots').PUT({
@@ -93,16 +119,16 @@
             });
             return expect(routes['PUT /robots/anaheim-machines/:id']).to.equal('RobotsController.customUpdate');
           });
-          return describe('.PATCH', function() {
-            return it('should add the custom path route (prefixed with route) to the routes object, and assigning it the defined controller action', function() {
-              var routes;
-              routes = navigator(function(makeRoute) {
-                return makeRoute('/robots').PATCH({
-                  '/anaheim-machines/:id': 'customUpdate'
-                });
+        });
+        describe('.PATCH', function() {
+          return it('should add the custom path route (prefixed with route) to the routes object, and assigning it the defined controller action', function() {
+            var routes;
+            routes = navigator(function(makeRoute) {
+              return makeRoute('/robots').PATCH({
+                '/anaheim-machines/:id': 'customUpdate'
               });
-              return expect(routes['PATCH /robots/anaheim-machines/:id']).to.equal('RobotsController.customUpdate');
             });
+            return expect(routes['PATCH /robots/anaheim-machines/:id']).to.equal('RobotsController.customUpdate');
           });
         });
         describe('.DELETE', function() {
