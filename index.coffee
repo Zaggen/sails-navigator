@@ -59,6 +59,7 @@ do ->
 
     routeObj = {}
     routeObj["GET #{route}"] = "#{controllerName}.index" if actions.index
+    routeObj["GET #{route}/:id"] = "#{controllerName}.show" if actions.show
     routeObj["GET #{route}/new"] = "#{controllerName}.new" if actions.new
     routeObj["POST #{route}"] = "#{controllerName}.create" if actions.create
     routeObj["GET #{route}/edit/:id"] = "#{controllerName}.edit" if actions.edit
