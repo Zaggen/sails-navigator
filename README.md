@@ -7,14 +7,14 @@ It will look something like this:
 ```coffeescript
 navigator = require('navigator')
 
-navigator.setRoutes (route)->
-  route('/')
+navigator (makeRoute)->
+  makeRoute('/')
     .GET '': 'index'
     # Conf override
     .controller 'HomeController'
 
   # eg: GET /news/:id => NewsController.show
-  route('/news')
+  makeRoute('/news')
     .REST('!', 'index')
     ### Custom Routes ###
     .GET('/follow': 'follow')
@@ -23,12 +23,12 @@ navigator.setRoutes (route)->
     .ALL('detach/:id': 'detach')
     .GET_and_POST('detach/:id': 'detach')
 
-  route('/products')
+  makeRoute('/products')
     .REST 'all'
     # Conf override
     .localizeRoute('es', 'en')
 
-  route('/store')
+  makeRoute('/store')
     .REST('index', 'show')
     # Conf override
     .localizeRoute true

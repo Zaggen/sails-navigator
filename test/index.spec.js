@@ -6,12 +6,53 @@
 
   navigator = require('../index');
 
+  console.inspect = function(data, depth, showHidden) {
+    if (depth == null) {
+      depth = 2;
+    }
+    if (showHidden == null) {
+      showHidden = false;
+    }
+    return this.log(require('util').inspect(data, showHidden, depth, true));
+  };
+
   describe('navigator', function() {
-    it('should be an object', function() {
-      return expect(navigator).to.be.an('object');
+    it('should be an function', function() {
+      return expect(navigator).to.be.an('function');
     });
-    return it('should be an object', function() {
-      return expect(navigator).to.be.an('object');
+    it('.config should be an method', function() {
+      return expect(navigator.config).to.be.a('function');
+    });
+    it('should throw an error when no argument is passed to it', function() {
+      return expect(function() {
+        return navigator.call(null);
+      }).to["throw"](/You must pass a function/);
+    });
+    it('should return an empty object when an empty (or one that does not manipulate the passed arg) fn is provided to it', function() {
+      return expect(navigator(function(makeRoute) {})).to.eql({});
+    });
+    return describe('When passing route paths to the fn passed as argument to the provided fn passed to .setRoutes', function() {
+      it('should return a restful version of the passed route in an routes object', function() {
+        var expectedRoutes, routes;
+        routes = navigator(function(makeRoute) {
+          return makeRoute('/robots');
+        });
+        console.inspect({
+          routes: routes
+        });
+        expectedRoutes = {
+          'GET /robots': 'RobotsController.index',
+          'GET /robots/new': 'RobotsController.new',
+          'POST /robots': 'RobotsController.create',
+          'GET /robots/edit/:id': 'RobotsController.edit',
+          'PUT /robots/:id': 'RobotsController.update',
+          'DELETE /robots/:id': 'RobotsController.destroy'
+        };
+        return expect(routes).to.eql(expectedRoutes);
+      });
+      return describe('When calling ', function() {
+        return xit('should return a restful version of the passed route in an routes object', function() {});
+      });
     });
   });
 
