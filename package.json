@@ -1,0 +1,32 @@
+{
+  "name": "sails-navigator",
+  "version": "1.0.0",
+  "description": "A route manager system that creates sails.js routes in a more manageable way",
+  "main": "index.js",
+  "scripts": {
+    "test": "mocha"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Zaggen/sails-navigator.git"
+  },
+  "keywords": [
+    "sails.js",
+    "routes",
+    "router",
+    "multilingual"
+  ],
+  "author": "zaggen",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Zaggen/sails-navigator/issues"
+  },
+  "homepage": "https://github.com/Zaggen/sails-navigator#readme",
+  "dependencies": {
+    "lodash": "^3.10.1"
+  },
+  "devDependencies": {
+    "chai": "^3.3.0",
+    "mocha": "^2.3.3"
+  }
+}
