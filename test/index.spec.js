@@ -37,9 +37,6 @@
         routes = navigator(function(makeRoute) {
           return makeRoute('/robots');
         });
-        console.inspect({
-          routes: routes
-        });
         expectedRoutes = {
           'GET /robots': 'RobotsController.index',
           'GET /robots/new': 'RobotsController.new',
@@ -50,8 +47,98 @@
         };
         return expect(routes).to.eql(expectedRoutes);
       });
-      return describe('When calling ', function() {
-        return xit('should return a restful version of the passed route in an routes object', function() {});
+      return describe('When calling sub-methods of the makeRoute fn (Which is passed by the navigator to the fn provided by the client)', function() {
+        describe('.GET', function() {
+          return it('should add the custom path route (prefixed with route) to the routes object, and assigning it the defined controller action', function() {
+            var expectedRoutes, routes;
+            routes = navigator(function(makeRoute) {
+              return makeRoute('/robots').GET({
+                '/anaheim-machines': 'customIndex'
+              });
+            });
+            expectedRoutes = {
+              'GET /robots': 'RobotsController.index',
+              'GET /robots/new': 'RobotsController.new',
+              'POST /robots': 'RobotsController.create',
+              'GET /robots/edit/:id': 'RobotsController.edit',
+              'PUT /robots/:id': 'RobotsController.update',
+              'DELETE /robots/:id': 'RobotsController.destroy',
+              'GET /robots/anaheim-machines': 'RobotsController.customIndex'
+            };
+            return expect(routes).to.eql(expectedRoutes);
+          });
+        });
+        describe('.POST', function() {
+          return it('should add the custom path route (prefixed with route) to the routes object, and assigning it the defined controller action', function() {
+            var routes;
+            routes = navigator(function(makeRoute) {
+              return makeRoute('/robots').POST({
+                '/anaheim-machines/:id': 'customCreate'
+              });
+            });
+            return expect(routes['POST /robots/anaheim-machines/:id']).to.equal('RobotsController.customCreate');
+          });
+        });
+        describe('.PUT', function() {
+          it('should add the custom path route (prefixed with route) to the routes object, and assigning it the defined controller action', function() {
+            var routes;
+            routes = navigator(function(makeRoute) {
+              return makeRoute('/robots').PUT({
+                '/anaheim-machines/:id': 'customUpdate'
+              });
+            });
+            return expect(routes['PUT /robots/anaheim-machines/:id']).to.equal('RobotsController.customUpdate');
+          });
+          return describe('.PATCH', function() {
+            return it('should add the custom path route (prefixed with route) to the routes object, and assigning it the defined controller action', function() {
+              var routes;
+              routes = navigator(function(makeRoute) {
+                return makeRoute('/robots').PATCH({
+                  '/anaheim-machines/:id': 'customUpdate'
+                });
+              });
+              return expect(routes['PATCH /robots/anaheim-machines/:id']).to.equal('RobotsController.customUpdate');
+            });
+          });
+        });
+        describe('.DELETE', function() {
+          return it('should add the custom path route (prefixed with route) to the routes object, and assigning it the defined controller action', function() {
+            var routes;
+            routes = navigator(function(makeRoute) {
+              return makeRoute('/robots').DELETE({
+                '/anaheim-machines/:id': 'customDestroy'
+              });
+            });
+            return expect(routes['DELETE /robots/anaheim-machines/:id']).to.equal('RobotsController.customDestroy');
+          });
+        });
+        describe('.GET_and_POST', function() {
+          return it('should add the custom path route (prefixed with route) for both verbs to the routes object, and assigning it the defined controller action', function() {
+            var routes;
+            routes = navigator(function(makeRoute) {
+              return makeRoute('/robots').GET_and_POST({
+                '/anaheim-machines/new': 'customNew'
+              });
+            });
+            expect(routes['GET /robots/anaheim-machines/new']).to.equal('RobotsController.customNew');
+            return expect(routes['POST /robots/anaheim-machines/new']).to.equal('RobotsController.customNew');
+          });
+        });
+        return describe('.ALL', function() {
+          return it('should add the custom path route (prefixed with route) for all verbs to the routes object, and assigning it the defined controller action', function() {
+            var routes;
+            routes = navigator(function(makeRoute) {
+              return makeRoute('/robots').ALL({
+                '/anaheim-machines/ditto': 'customAction'
+              });
+            });
+            expect(routes['GET /robots/anaheim-machines/ditto']).to.equal('RobotsController.customAction');
+            expect(routes['POST /robots/anaheim-machines/ditto']).to.equal('RobotsController.customAction');
+            expect(routes['PATCH /robots/anaheim-machines/ditto']).to.equal('RobotsController.customAction');
+            expect(routes['PUT /robots/anaheim-machines/ditto']).to.equal('RobotsController.customAction');
+            return expect(routes['DELETE /robots/anaheim-machines/ditto']).to.equal('RobotsController.customAction');
+          });
+        });
       });
     });
   });
