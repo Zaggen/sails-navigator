@@ -72,18 +72,22 @@
       controllerName = (_.capitalize(route.substr(1))) + "Controller";
       actions = {
         index: true,
+        show: true,
         "new": true,
         create: true,
         edit: true,
         update: true,
         destroy: true
       };
-      if (filter !== 'all') {
-        true;
+      if (filter[0] !== 'all') {
+        actions = filter[0] === '!' ? _.omit(actions, filter) : _.pick(actions, filter);
       }
       routeObj = {};
       if (actions.index) {
         routeObj["GET " + route] = controllerName + ".index";
+      }
+      if (actions.show) {
+        routeObj["GET " + route + "/:id"] = controllerName + ".show";
       }
       if (actions["new"]) {
         routeObj["GET " + route + "/new"] = controllerName + ".new";

@@ -53,18 +53,18 @@ do ->
 
   _makeRestfulRoutes = (filter, route)->
     controllerName = "#{_.capitalize(route.substr(1))}Controller"
-    actions = {index: true, new: true, create: true,edit: true, update: true, destroy: true}
-    unless filter is 'all'
-      true
+    actions = {index: true, show: true, new: true, create: true,edit: true, update: true, destroy: true}
+    unless filter[0] is 'all'
+      actions = if filter[0] is '!' then _.omit(actions, filter) else _.pick(actions, filter)
 
     routeObj = {}
-    routeObj["GET #{route}"] = "#{controllerName}.index" if actions.index
-    routeObj["GET #{route}/:id"] = "#{controllerName}.show" if actions.show
-    routeObj["GET #{route}/new"] = "#{controllerName}.new" if actions.new
-    routeObj["POST #{route}"] = "#{controllerName}.create" if actions.create
-    routeObj["GET #{route}/edit/:id"] = "#{controllerName}.edit" if actions.edit
-    routeObj["PUT #{route}/:id"] = "#{controllerName}.update" if actions.update
-    routeObj["DELETE #{route}/:id"] = "#{controllerName}.destroy" if actions.destroy
+    if actions.index   then routeObj["GET #{route}"] = "#{controllerName}.index"
+    if actions.show    then routeObj["GET #{route}/:id"] = "#{controllerName}.show"
+    if actions.new     then routeObj["GET #{route}/new"] = "#{controllerName}.new"
+    if actions.create  then routeObj["POST #{route}"] = "#{controllerName}.create"
+    if actions.edit    then routeObj["GET #{route}/edit/:id"] = "#{controllerName}.edit"
+    if actions.update  then routeObj["PUT #{route}/:id"] = "#{controllerName}.update"
+    if actions.destroy then routeObj["DELETE #{route}/:id"] = "#{controllerName}.destroy"
     return routeObj
 
 
