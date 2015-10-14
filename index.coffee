@@ -22,10 +22,18 @@ do ->
     return _makeRoute
 
   # Here we create methods to the _makeRoute that correspond to the http verbs
-  _.each ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'], (VERB)->
+  VERBS = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE']
+  _.each VERBS, (VERB)->
     _makeRoute[VERB] = (pathObj)->
       return _makeCustomRoute.call(_makeRoute, VERB, pathObj)
 
+  _makeRoute.GET_and_POST = (pathObj)->
+    @GET(pathObj)
+    @POST(pathObj)
+
+  _makeRoute.ALL = (pathObj)->
+    _.each VERBS, (VERB)->
+      _makeRoute[VERB](pathObj)
 
   _makeCustomRoute = (VERB, pathObj)->
     for path, action of pathObj
