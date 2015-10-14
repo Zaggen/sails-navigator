@@ -1,5 +1,7 @@
 expect = require('chai').expect
 navigator = require('../index')
+_ = require('lodash')
+
 # Helpers
 console.inspect = (data, depth = 2, showHidden = false)->
   @log(require('util').inspect(data, showHidden, depth, true))
@@ -16,36 +18,37 @@ describe 'navigator', ->
     expect(navigator((makeRoute)->)).to.eql({})
 
   describe 'When passing route paths to the fn passed as argument to the provided fn passed to .setRoutes', ->
-    it 'should return a restful version of the passed route in an routes object', ->
+    restfulRoutes =
+      'GET /robots':  'RobotsController.index'
+      'GET /robots/new': 'RobotsController.new'
+      'POST /robots': 'RobotsController.create'
+      'GET /robots/edit/:id':  'RobotsController.edit'
+      'PUT /robots/:id':  'RobotsController.update'
+      'DELETE /robots/:id':  'RobotsController.destroy'
+
+    ###it 'should return a restful version of the passed route in a routes object', ->
       routes = navigator (makeRoute)->
         makeRoute('/robots')
-      expectedRoutes =
-        'GET /robots':  'RobotsController.index'
-        'GET /robots/new': 'RobotsController.new'
-        'POST /robots': 'RobotsController.create'
-        'GET /robots/edit/:id':  'RobotsController.edit'
-        'PUT /robots/:id':  'RobotsController.update'
-        'DELETE /robots/:id':  'RobotsController.destroy'
-
-      expect(routes).to.eql(expectedRoutes)
+      expect(routes).to.eql(restfulRoutes)###
 
     # Custom routes
     describe 'When calling sub-methods of the makeRoute fn (Which is passed by the navigator to the fn provided by the client)', ->
-      describe '.GET', ->
+      describe '.REST', ->
+        describe 'When passing "all" as argument', ->
+          it 'should return a restful version of the passed route in a routes object', ->
+            routes = navigator (makeRoute)->
+              makeRoute('/robots')
+                .REST('all')
+            expect(routes).to.eql(restfulRoutes)
+
+
+      describe.only '.GET', ->
         it 'should add the custom path route (prefixed with route) to the routes object, and assigning it the defined controller action', ->
           routes = navigator (makeRoute)->
             makeRoute('/robots')
               .GET('/anaheim-machines': 'customIndex')
 
-          expectedRoutes =
-            'GET /robots':  'RobotsController.index'
-            'GET /robots/new': 'RobotsController.new'
-            'POST /robots': 'RobotsController.create'
-            'GET /robots/edit/:id':  'RobotsController.edit'
-            'PUT /robots/:id':  'RobotsController.update'
-            'DELETE /robots/:id':  'RobotsController.destroy'
-            'GET /robots/anaheim-machines':  'RobotsController.customIndex'
-          expect(routes).to.eql(expectedRoutes)
+          expect(routes['GET /robots/anaheim-machines']).to.equal('RobotsController.customIndex')
 
       describe '.POST', ->
         it 'should add the custom path route (prefixed with route) to the routes object, and assigning it the defined controller action', ->
