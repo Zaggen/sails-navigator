@@ -1,10 +1,40 @@
 do ->
   _ = require('lodash')
 
+  navigator = (fn)->
+    if fn?
+      navigator._routes = {}
+      fn(_makeRoute) or {}
+      routes = navigator._routes
+      navigator._routes = null
+      return routes
+    else
+      throw new Error('You must pass a function as argument')
+
+  navigator.config = (options)->
+
   _makeRoute = (route)->
-    routeObj = {}
-    _makeRestfulRoutes(route, routeObj)
-    return routeObj
+    currentRoutes = {}
+    _makeRestfulRoutes(route, currentRoutes)
+    _.extend(navigator._routes, currentRoutes)
+    # This allows chaining
+    _makeRoute._currentRoot = route
+    return _makeRoute
+
+  # Here we create methods to the _makeRoute that correspond to the http verbs
+  _.each ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'], (VERB)->
+    _makeRoute[VERB] = (pathObj)->
+      return _makeCustomRoute.call(_makeRoute, VERB, pathObj)
+
+
+  _makeCustomRoute = (VERB, pathObj)->
+    for path, action of pathObj
+      route = @_currentRoot
+      controllerName = "#{_.capitalize(route.substr(1))}Controller"
+      route += path
+      navigator._routes["#{VERB} #{route}"] = "#{controllerName}.#{action}"
+    return _makeRoute
+
 
   _makeRestfulRoutes = (route, routeObj)->
     controllerName = "#{_.capitalize(route.substr(1))}Controller"
@@ -31,13 +61,5 @@ do ->
   route.translateNameSpace = ->
   route.path = ->
   routeToRecordFormat= ->###
-
-  navigator = (fn)->
-    if fn?
-      return fn(_makeRoute) or {}
-    else
-      throw new Error('You must pass a function to .setRoutes')
-
-  navigator.config = (options)->
 
   module.exports = navigator
