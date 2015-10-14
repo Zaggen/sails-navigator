@@ -42,7 +42,7 @@ describe 'navigator', ->
             expect(routes).to.eql(restfulRoutes)
 
 
-      describe.only '.GET', ->
+      describe '.GET', ->
         it 'should add the custom path route (prefixed with route) to the routes object, and assigning it the defined controller action', ->
           routes = navigator (makeRoute)->
             makeRoute('/robots')
@@ -62,11 +62,11 @@ describe 'navigator', ->
             makeRoute('/robots').PUT('/anaheim-machines/:id': 'customUpdate')
           expect(routes['PUT /robots/anaheim-machines/:id']).to.equal('RobotsController.customUpdate')
 
-        describe '.PATCH', ->
-          it 'should add the custom path route (prefixed with route) to the routes object, and assigning it the defined controller action', ->
-            routes = navigator (makeRoute)->
-              makeRoute('/robots').PATCH('/anaheim-machines/:id': 'customUpdate')
-            expect(routes['PATCH /robots/anaheim-machines/:id']).to.equal('RobotsController.customUpdate')
+      describe '.PATCH', ->
+        it 'should add the custom path route (prefixed with route) to the routes object, and assigning it the defined controller action', ->
+          routes = navigator (makeRoute)->
+            makeRoute('/robots').PATCH('/anaheim-machines/:id': 'customUpdate')
+          expect(routes['PATCH /robots/anaheim-machines/:id']).to.equal('RobotsController.customUpdate')
 
       describe '.DELETE', ->
         it 'should add the custom path route (prefixed with route) to the routes object, and assigning it the defined controller action', ->
