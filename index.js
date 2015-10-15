@@ -3,8 +3,15 @@
   var slice = [].slice;
 
   (function() {
-    var VERBS, _, _makeCustomRoute, _makeRestfulRoutes, _makeRoute, navigator;
+    var VERBS, _, _currentRouteConf, _makeCustomRoute, _makeRestfulRoutes, _makeRoute, _optionsDefaults, navigator;
     _ = require('lodash');
+    _optionsDefaults = {
+      pathToRecordFormat: 'route/:id',
+      localizeRoute: false,
+      defaultLocale: 'en',
+      prefixOnDefaultLocale: false
+    };
+    _currentRouteConf = null;
     navigator = function(fn) {
       var routes;
       if (fn != null) {
@@ -20,7 +27,9 @@
     navigator.config = function(options) {};
     _makeRoute = function(route) {
       var currentRoutes;
+      this._currentRouteConf = null;
       currentRoutes = {};
+      _currentRouteConf = {};
       _.extend(navigator._routes, currentRoutes);
       _makeRoute._currentRoot = route;
       return _makeRoute;
@@ -29,26 +38,33 @@
       var filter, restFulRoutes;
       filter = 1 <= arguments.length ? slice.call(arguments, 0) : [];
       restFulRoutes = _makeRestfulRoutes(filter, this._currentRoot);
-      return _.extend(navigator._routes, restFulRoutes);
+      _.extend(navigator._routes, restFulRoutes);
+      return this;
     };
     _makeRoute.GET = function(pathObj) {
-      return _makeCustomRoute.call(_makeRoute, 'GET', pathObj);
+      _makeCustomRoute.call(_makeRoute, 'GET', pathObj);
+      return this;
     };
     _makeRoute.POST = function(pathObj) {
-      return _makeCustomRoute.call(_makeRoute, 'POST', pathObj);
+      _makeCustomRoute.call(_makeRoute, 'POST', pathObj);
+      return this;
     };
     _makeRoute.PUT = function(pathObj) {
-      return _makeCustomRoute.call(_makeRoute, 'PUT', pathObj);
+      _makeCustomRoute.call(_makeRoute, 'PUT', pathObj);
+      return this;
     };
     _makeRoute.PATCH = function(pathObj) {
-      return _makeCustomRoute.call(_makeRoute, 'PATCH', pathObj);
+      _makeCustomRoute.call(_makeRoute, 'PATCH', pathObj);
+      return this;
     };
     _makeRoute.DELETE = function(pathObj) {
-      return _makeCustomRoute.call(_makeRoute, 'DELETE', pathObj);
+      _makeCustomRoute.call(_makeRoute, 'DELETE', pathObj);
+      return this;
     };
     _makeRoute.GET_and_POST = function(pathObj) {
       this.GET(pathObj);
-      return this.POST(pathObj);
+      this.POST(pathObj);
+      return this;
     };
     VERBS = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'];
     _makeRoute.ALL = function(pathObj) {
@@ -56,12 +72,25 @@
         return _makeRoute[VERB](pathObj);
       });
     };
+    _makeRoute.confOverride = function(options) {
+      if (options == null) {
+        options = {};
+      }
+      _currentRouteConf = options;
+      return this;
+    };
     _makeCustomRoute = function(VERB, pathObj) {
-      var action, controllerName, path, route;
+      var action, actionParts, controllerName, guessedControllerName, path, route;
       for (path in pathObj) {
         action = pathObj[path];
         route = this._currentRoot;
-        controllerName = (_.capitalize(route.substr(1))) + "Controller";
+        guessedControllerName = (_.capitalize(route.substr(1))) + "Controller";
+        controllerName = _currentRouteConf.controller || guessedControllerName;
+        actionParts = action.split('.');
+        if (actionParts.length > 1) {
+          controllerName = actionParts[0];
+          action = actionParts[1];
+        }
         route += path;
         navigator._routes[VERB + " " + route] = controllerName + "." + action;
       }
@@ -69,7 +98,7 @@
     };
     _makeRestfulRoutes = function(filter, route) {
       var actions, controllerName, routeObj;
-      controllerName = (_.capitalize(route.substr(1))) + "Controller";
+      controllerName = _currentRouteConf.controller || ((_.capitalize(route.substr(1))) + "Controller");
       actions = {
         index: true,
         show: true,
