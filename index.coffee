@@ -3,12 +3,13 @@ do ->
 
   _optionsDefaults =
     #controller: 'StoreController'
-    pathToRecordFormat: 'route/:id' #'route/:id/:slug'
+    pathToRecordFormat: '*/:id' #'route/:id/:slug'
     localizeRoute: false #['es', 'en']
     defaultLocale: 'en'
-    prefixOnDefaultLocale: false
+    prefixLocale: true
+    skipLocalePrefixOnDefaultLocale: true
 
-  _currentRouteConf = null
+  _routeConf = null
 
   navigator = (fn)->
     if fn?
@@ -16,6 +17,7 @@ do ->
       fn(_makeRoute) or {}
       routes = navigator._routes
       navigator._routes = null
+      _routeConf = null
       return routes
     else
       throw new Error('You must pass a function as argument')
@@ -23,18 +25,32 @@ do ->
   navigator.config = (options)->
 
   _makeRoute = (route)->
-    @_currentRouteConf = null
     currentRoutes = {}
-    _currentRouteConf = {}
+    _routeConf = _optionsDefaults
     #_makeRestfulRoutes(route, currentRoutes)
+
     _.extend(navigator._routes, currentRoutes)
     # This allows chaining
     _makeRoute._currentRoot = route
     return _makeRoute
 
   _makeRoute.REST = (filter...)->
-    restFulRoutes = _makeRestfulRoutes(filter, @_currentRoot)
-    _.extend(navigator._routes, restFulRoutes)
+    locales = _routeConf.localizeRoute
+    controllerName = _routeConf.controller or "#{_.capitalize(@_currentRoot.substr(1))}Controller"
+    if _routeConf.localizeRoute
+      for locale in locales
+        if _routeConf.prefixLocale and not (locale is _routeConf.defaultLocale and _routeConf.skipLocalePrefixOnDefaultLocale)
+          routePrefix = "/#{locale}"
+        else
+          routePrefix = ""
+        localizedData = _routeConf.localizedData or _routeConf.localizedData[@_currentRoot]
+        route = localizedData[locale]
+        restFulRoutes = _makeRestfulRoutes(filter, controllerName, route, routePrefix)
+        _.extend(navigator._routes, restFulRoutes)
+    else
+      restFulRoutes = _makeRestfulRoutes(filter, controllerName, @_currentRoot)
+      _.extend(navigator._routes, restFulRoutes)
+
     return this
 
   # Here we create methods to the _makeRoute that correspond to the http verbs
@@ -66,14 +82,14 @@ do ->
       _makeRoute[VERB](pathObj)
 
   _makeRoute.confOverride = (options = {})->
-    _currentRouteConf = options
+    _routeConf = _.defaults(options, _routeConf)
     return this
 
   _makeCustomRoute = (VERB, pathObj)->
     for path, action of pathObj
       route = @_currentRoot
       guessedControllerName = "#{_.capitalize(route.substr(1))}Controller"
-      controllerName = _currentRouteConf.controller or guessedControllerName
+      controllerName = _routeConf.controller or guessedControllerName
       # If the Controller is specified in the pathObj, it overrides any other controller options
       actionParts = action.split('.')
       if actionParts.length > 1
@@ -83,21 +99,20 @@ do ->
       navigator._routes["#{VERB} #{route}"] = "#{controllerName}.#{action}"
     return _makeRoute
 
-
-  _makeRestfulRoutes = (filter, route)->
-    controllerName = _currentRouteConf.controller or "#{_.capitalize(route.substr(1))}Controller"
+  _makeRestfulRoutes = (filter, controllerName, route, routePrefix = '')->
+    singleRecordPathPostFix = _routeConf.pathToRecordFormat.replace('*/', '')
     actions = {index: true, show: true, new: true, create: true,edit: true, update: true, destroy: true}
     unless filter[0] is 'all'
       actions = if filter[0] is '!' then _.omit(actions, filter) else _.pick(actions, filter)
 
     routeObj = {}
-    if actions.index   then routeObj["GET #{route}"] = "#{controllerName}.index"
-    if actions.show    then routeObj["GET #{route}/:id"] = "#{controllerName}.show"
-    if actions.new     then routeObj["GET #{route}/new"] = "#{controllerName}.new"
-    if actions.create  then routeObj["POST #{route}"] = "#{controllerName}.create"
-    if actions.edit    then routeObj["GET #{route}/edit/:id"] = "#{controllerName}.edit"
-    if actions.update  then routeObj["PUT #{route}/:id"] = "#{controllerName}.update"
-    if actions.destroy then routeObj["DELETE #{route}/:id"] = "#{controllerName}.destroy"
+    if actions.index   then routeObj["GET #{routePrefix}#{route}"] = "#{controllerName}.index"
+    if actions.show    then routeObj["GET #{routePrefix}#{route}/#{singleRecordPathPostFix}"] = "#{controllerName}.show"
+    if actions.new     then routeObj["GET #{routePrefix}#{route}/new"] = "#{controllerName}.new"
+    if actions.create  then routeObj["POST #{routePrefix}#{route}"] = "#{controllerName}.create"
+    if actions.edit    then routeObj["GET #{routePrefix}#{route}/edit/#{singleRecordPathPostFix}"] = "#{controllerName}.edit"
+    if actions.update  then routeObj["PUT #{routePrefix}#{route}/#{singleRecordPathPostFix}"] = "#{controllerName}.update"
+    if actions.destroy then routeObj["DELETE #{routePrefix}#{route}/#{singleRecordPathPostFix}"] = "#{controllerName}.destroy"
     return routeObj
 
 
