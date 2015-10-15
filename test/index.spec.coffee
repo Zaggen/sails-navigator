@@ -34,7 +34,6 @@ describe 'navigator', ->
             routes = navigator (makeRoute)->
               makeRoute('/robots')
                 .REST('all')
-            console.inspect {routes}
             expect(routes).to.eql(restfulRoutes)
 
         describe 'When passing a list of the actions to include as argument', ->
@@ -114,6 +113,33 @@ describe 'navigator', ->
             makeRoute('/')
             .GET('': 'HomeController.index')
           expect(routes['GET /']).to.equal('HomeController.index')
+
+      describe '.path', ->
+        it 'It should create a route with route passed to makeRoute as prefix', ->
+          routes = navigator (makeRoute)->
+            makeRoute('/admin')
+              .path('/robots')
+                .GET('': 'index')
+
+          expect(routes).to.eql('GET /admin/robots': 'admin/RobotsController.index')
+
+        describe 'When chaining path', ->
+          it 'It will always refer back to the initial route data', ->
+            routes = navigator (makeRoute)->
+              makeRoute('/admin')
+                .confOverride
+                    pathToRecordFormat: '*/:id/:slug'
+                .path('/robots')
+                  .confOverride
+                      pathToRecordFormat: '*/:id'
+                  .REST('update')
+                .path('/articles')
+                  .REST('update')
+
+            expect(routes).to.eql(
+              'PUT /admin/robots/:id': 'admin/RobotsController.update'
+              'PUT /admin/articles/:id/:slug': 'admin/ArticlesController.update'
+            )
 
       describe '.confOverride', ->
         describe 'When passing a custom controller', ->

@@ -52,9 +52,6 @@
               routes = navigator(function(makeRoute) {
                 return makeRoute('/robots').REST('all');
               });
-              console.inspect({
-                routes: routes
-              });
               return expect(routes).to.eql(restfulRoutes);
             });
           });
@@ -179,6 +176,35 @@
             return expect(routes['GET /']).to.equal('HomeController.index');
           });
         });
+        describe('.path', function() {
+          it('It should create a route with route passed to makeRoute as prefix', function() {
+            var routes;
+            routes = navigator(function(makeRoute) {
+              return makeRoute('/admin').path('/robots').GET({
+                '': 'index'
+              });
+            });
+            return expect(routes).to.eql({
+              'GET /admin/robots': 'admin/RobotsController.index'
+            });
+          });
+          return describe('When chaining path', function() {
+            return it('It will always refer back to the initial route data', function() {
+              var routes;
+              routes = navigator(function(makeRoute) {
+                return makeRoute('/admin').confOverride({
+                  pathToRecordFormat: '*/:id/:slug'
+                }).path('/robots').confOverride({
+                  pathToRecordFormat: '*/:id'
+                }).REST('update').path('/articles').REST('update');
+              });
+              return expect(routes).to.eql({
+                'PUT /admin/robots/:id': 'admin/RobotsController.update',
+                'PUT /admin/articles/:id/:slug': 'admin/ArticlesController.update'
+              });
+            });
+          });
+        });
         return describe('.confOverride', function() {
           describe('When passing a custom controller', function() {
             return it('should override the guessed controller default for a given route', function() {
@@ -212,7 +238,7 @@
               return expect(routes).to.eql(expectedRoutes);
             });
           });
-          return describe('When overriding the default localizeRoute', function() {
+          describe('When overriding the default localizeRoute', function() {
             return it('should create the regular routes, as well as localized versions of it, based on a locale object', function() {
               var expectedRoutes, routes;
               routes = navigator(function(makeRoute) {
@@ -243,6 +269,18 @@
               };
               return expect(routes).to.eql(expectedRoutes);
             });
+          });
+          return it('should only override the settings for a given route, and not the rest', function() {
+            var customNamedController, routes;
+            customNamedController = 'InstitutionsController';
+            routes = navigator(function(makeRoute) {
+              makeRoute('/museums').confOverride({
+                controller: customNamedController
+              }).REST('index');
+              return makeRoute('/artists').REST('index');
+            });
+            expect(routes['GET /museums']).to.equal(customNamedController + ".index");
+            return expect(routes['GET /artists']).to.equal("ArtistsController.index");
           });
         });
       });
