@@ -178,6 +178,19 @@ describe 'navigator', ->
 
             expect(routes).to.eql(expectedRoutes)
 
+        it 'should only override the settings for a given route, and not the rest', ->
+          customNamedController = 'InstitutionsController'
+          routes = navigator (makeRoute)->
+            makeRoute('/museums')
+              .confOverride(controller: customNamedController)
+              .REST('index')
+
+            makeRoute('/artists')
+              .REST('index')
+
+          expect(routes['GET /museums']).to.equal("#{customNamedController}.index")
+          expect(routes['GET /artists']).to.equal("ArtistsController.index")
+
   describe '.config', ->
     it 'should modify the module configuration when valid data is passed', ->
       navigator.config(
