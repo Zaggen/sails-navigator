@@ -19,7 +19,7 @@ describe 'navigator', ->
 
   describe 'When passing route paths to the fn passed as argument to the provided fn passed to .setRoutes', ->
     describe 'When calling sub-methods of the makeRoute fn (Which is passed by the navigator to the fn provided by the client)', ->
-      describe.only '.REST', ->
+      describe '.REST', ->
         restfulRoutes =
           'GET /robots':  'RobotsController.index'
           'GET /robots/:id':  'RobotsController.show'
@@ -41,12 +41,12 @@ describe 'navigator', ->
             routes = navigator (makeRoute)->
               makeRoute('/robots')
               .REST('index', 'show')
-            expectedRoutes = _.pick restfulRoutes, [
+
+            expect(routes).to.eql( _.pick(restfulRoutes, [
                 _.findKey(restfulRoutes, (action)-> _.endsWith(action, 'index')),
                 _.findKey(restfulRoutes, (action)-> _.endsWith(action, 'show'))
               ]
-
-            expect(routes).to.eql(expectedRoutes)
+            ))
 
         describe 'When passing a list of the actions to exclude as argument', ->
           it 'should return a restful version of the passed route with all but the excluded actions in a routes object', ->
@@ -54,8 +54,6 @@ describe 'navigator', ->
               makeRoute('/robots')
                 .REST('!', 'destroy')
             expectedRoutes = _.omit(restfulRoutes, _.findKey(restfulRoutes, (action)-> _.endsWith(action, 'destroy')))
-
-            console.inspect {expectedRoutes}
             expect(routes).to.eql(expectedRoutes)
 
       # Custom routes Makers
@@ -108,3 +106,23 @@ describe 'navigator', ->
           expect(routes['PATCH /robots/anaheim-machines/ditto']).to.equal('RobotsController.customAction')
           expect(routes['PUT /robots/anaheim-machines/ditto']).to.equal('RobotsController.customAction')
           expect(routes['DELETE /robots/anaheim-machines/ditto']).to.equal('RobotsController.customAction')
+
+      describe 'When the controllerName is specified before the action', ->
+        it 'should take precedence over the guessed controller name(based on the route)', ->
+          routes = navigator (makeRoute)->
+            makeRoute('/')
+            .GET('': 'HomeController.index')
+          expect(routes['GET /']).to.equal('HomeController.index')
+
+      describe '.confOverride', ->
+        describe 'When passing a custom controller', ->
+          it 'should override the guessed controller default for a given route', ->
+            customNamedController = 'InstitutionsController'
+            routes = navigator (makeRoute)->
+              makeRoute('/museums')
+                .confOverride
+                  controller: customNamedController
+                .REST('index')
+
+            expect(routes['GET /museums']).to.equal("#{customNamedController}.index")
+

@@ -35,7 +35,7 @@
     });
     return describe('When passing route paths to the fn passed as argument to the provided fn passed to .setRoutes', function() {
       return describe('When calling sub-methods of the makeRoute fn (Which is passed by the navigator to the fn provided by the client)', function() {
-        describe.only('.REST', function() {
+        describe('.REST', function() {
           var restfulRoutes;
           restfulRoutes = {
             'GET /robots': 'RobotsController.index',
@@ -57,18 +57,17 @@
           });
           describe('When passing a list of the actions to include as argument', function() {
             return it('should return a restful version of the passed route with only the included actions in a routes object', function() {
-              var expectedRoutes, routes;
+              var routes;
               routes = navigator(function(makeRoute) {
                 return makeRoute('/robots').REST('index', 'show');
               });
-              expectedRoutes = _.pick(restfulRoutes, [
+              return expect(routes).to.eql(_.pick(restfulRoutes, [
                 _.findKey(restfulRoutes, function(action) {
                   return _.endsWith(action, 'index');
                 }), _.findKey(restfulRoutes, function(action) {
                   return _.endsWith(action, 'show');
                 })
-              ]);
-              return expect(routes).to.eql(expectedRoutes);
+              ]));
             });
           });
           return describe('When passing a list of the actions to exclude as argument', function() {
@@ -80,9 +79,6 @@
               expectedRoutes = _.omit(restfulRoutes, _.findKey(restfulRoutes, function(action) {
                 return _.endsWith(action, 'destroy');
               }));
-              console.inspect({
-                expectedRoutes: expectedRoutes
-              });
               return expect(routes).to.eql(expectedRoutes);
             });
           });
@@ -154,7 +150,7 @@
             return expect(routes['POST /robots/anaheim-machines/new']).to.equal('RobotsController.customNew');
           });
         });
-        return describe('.ALL', function() {
+        describe('.ALL', function() {
           return it('should add the custom path route (prefixed with route) for all verbs to the routes object, and assigning it the defined controller action', function() {
             var routes;
             routes = navigator(function(makeRoute) {
@@ -167,6 +163,31 @@
             expect(routes['PATCH /robots/anaheim-machines/ditto']).to.equal('RobotsController.customAction');
             expect(routes['PUT /robots/anaheim-machines/ditto']).to.equal('RobotsController.customAction');
             return expect(routes['DELETE /robots/anaheim-machines/ditto']).to.equal('RobotsController.customAction');
+          });
+        });
+        describe('When the controllerName is specified before the action', function() {
+          return it('should take precedence over the guessed controller name(based on the route)', function() {
+            var routes;
+            routes = navigator(function(makeRoute) {
+              return makeRoute('/').GET({
+                '': 'HomeController.index'
+              });
+            });
+            return expect(routes['GET /']).to.equal('HomeController.index');
+          });
+        });
+        return describe('.confOverride', function() {
+          return describe('When passing a custom controller', function() {
+            return it('should override the guessed controller default for a given route', function() {
+              var customNamedController, routes;
+              customNamedController = 'InstitutionsController';
+              routes = navigator(function(makeRoute) {
+                return makeRoute('/museums').confOverride({
+                  controller: customNamedController
+                }).REST('index');
+              });
+              return expect(routes['GET /museums']).to.equal(customNamedController + ".index");
+            });
           });
         });
       });
