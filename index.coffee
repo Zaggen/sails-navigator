@@ -1,6 +1,15 @@
 do ->
   _ = require('lodash')
 
+  _optionsDefaults =
+    #controller: 'StoreController'
+    pathToRecordFormat: 'route/:id' #'route/:id/:slug'
+    localizeRoute: false #['es', 'en']
+    defaultLocale: 'en'
+    prefixOnDefaultLocale: false
+
+  _currentRouteConf = null
+
   navigator = (fn)->
     if fn?
       navigator._routes = {}
@@ -14,7 +23,9 @@ do ->
   navigator.config = (options)->
 
   _makeRoute = (route)->
+    @_currentRouteConf = null
     currentRoutes = {}
+    _currentRouteConf = {}
     #_makeRestfulRoutes(route, currentRoutes)
     _.extend(navigator._routes, currentRoutes)
     # This allows chaining
@@ -24,35 +35,57 @@ do ->
   _makeRoute.REST = (filter...)->
     restFulRoutes = _makeRestfulRoutes(filter, @_currentRoot)
     _.extend(navigator._routes, restFulRoutes)
+    return this
 
   # Here we create methods to the _makeRoute that correspond to the http verbs
   # We make them one by one, instead of on a loop, to help the IDEs
-  _makeRoute.GET = (pathObj)-> _makeCustomRoute.call(_makeRoute, 'GET', pathObj)
-  _makeRoute.POST = (pathObj)-> _makeCustomRoute.call(_makeRoute, 'POST', pathObj)
-  _makeRoute.PUT = (pathObj)-> _makeCustomRoute.call(_makeRoute, 'PUT', pathObj)
-  _makeRoute.PATCH = (pathObj)-> _makeCustomRoute.call(_makeRoute, 'PATCH', pathObj)
-  _makeRoute.DELETE = (pathObj)-> _makeCustomRoute.call(_makeRoute, 'DELETE', pathObj)
+  _makeRoute.GET = (pathObj)->
+    _makeCustomRoute.call(_makeRoute, 'GET', pathObj)
+    return this
+  _makeRoute.POST = (pathObj)->
+    _makeCustomRoute.call(_makeRoute, 'POST', pathObj)
+    return this
+  _makeRoute.PUT = (pathObj)->
+    _makeCustomRoute.call(_makeRoute, 'PUT', pathObj)
+    return this
+  _makeRoute.PATCH = (pathObj)->
+    _makeCustomRoute.call(_makeRoute, 'PATCH', pathObj)
+    return this
+  _makeRoute.DELETE = (pathObj)->
+    _makeCustomRoute.call(_makeRoute, 'DELETE', pathObj)
+    return this
 
   _makeRoute.GET_and_POST = (pathObj)->
     @GET(pathObj)
     @POST(pathObj)
+    return this
 
   VERBS = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE']
   _makeRoute.ALL = (pathObj)->
     _.each VERBS, (VERB)->
       _makeRoute[VERB](pathObj)
 
+  _makeRoute.confOverride = (options = {})->
+    _currentRouteConf = options
+    return this
+
   _makeCustomRoute = (VERB, pathObj)->
     for path, action of pathObj
       route = @_currentRoot
-      controllerName = "#{_.capitalize(route.substr(1))}Controller"
+      guessedControllerName = "#{_.capitalize(route.substr(1))}Controller"
+      controllerName = _currentRouteConf.controller or guessedControllerName
+      # If the Controller is specified in the pathObj, it overrides any other controller options
+      actionParts = action.split('.')
+      if actionParts.length > 1
+        controllerName = actionParts[0]
+        action = actionParts[1]
       route += path
       navigator._routes["#{VERB} #{route}"] = "#{controllerName}.#{action}"
     return _makeRoute
 
 
   _makeRestfulRoutes = (filter, route)->
-    controllerName = "#{_.capitalize(route.substr(1))}Controller"
+    controllerName = _currentRouteConf.controller or "#{_.capitalize(route.substr(1))}Controller"
     actions = {index: true, show: true, new: true, create: true,edit: true, update: true, destroy: true}
     unless filter[0] is 'all'
       actions = if filter[0] is '!' then _.omit(actions, filter) else _.pick(actions, filter)
