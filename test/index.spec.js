@@ -205,6 +205,18 @@
             });
           });
         });
+        describe('.controller', function() {
+          return describe('When passing a custom controller', function() {
+            return it('should override the guessed controller default for a given route', function() {
+              var customNamedController, routes;
+              customNamedController = 'InstitutionsController';
+              routes = navigator(function(makeRoute) {
+                return makeRoute('/museums').controller(customNamedController).REST('index');
+              });
+              return expect(routes['GET /museums']).to.equal(customNamedController + ".index");
+            });
+          });
+        });
         return describe('.confOverride', function() {
           describe('When passing a custom controller', function() {
             return it('should override the guessed controller default for a given route', function() {

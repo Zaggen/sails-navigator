@@ -141,6 +141,17 @@ describe 'navigator', ->
               'PUT /admin/articles/:id/:slug': 'admin/ArticlesController.update'
             )
 
+      describe '.controller', ->
+        describe 'When passing a custom controller', ->
+          it 'should override the guessed controller default for a given route', ->
+            customNamedController = 'InstitutionsController'
+            routes = navigator (makeRoute)->
+              makeRoute('/museums')
+                .controller(customNamedController)
+                .REST('index')
+
+            expect(routes['GET /museums']).to.equal("#{customNamedController}.index")
+
       describe '.confOverride', ->
         describe 'When passing a custom controller', ->
           it 'should override the guessed controller default for a given route', ->

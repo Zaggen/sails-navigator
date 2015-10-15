@@ -134,6 +134,12 @@
       _routeConf = _.defaults({}, options, localizedData, _routeConf);
       return this;
     };
+    _makeRoute.controller = function(controllerName) {
+      _makeRoute.confOverride({
+        controller: controllerName
+      });
+      return this;
+    };
     _makeCustomRoute = function(VERB, pathObj) {
       var action, actionParts, controllerName, path, route;
       for (path in pathObj) {

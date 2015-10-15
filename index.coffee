@@ -117,6 +117,10 @@ do ->
     _routeConf = _.defaults({}, options, localizedData,  _routeConf)
     return this
 
+  _makeRoute.controller = (controllerName)->
+    _makeRoute.confOverride({controller: controllerName})
+    return this
+
   _makeCustomRoute = (VERB, pathObj)->
     for path, action of pathObj
       route = _currentRoot
