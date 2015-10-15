@@ -9,9 +9,7 @@ navigator = require('navigator')
 
 navigator (makeRoute)->
   makeRoute('/')
-    .GET '': 'index'
-    # Conf override
-    .controller 'HomeController'
+    .GET '': 'HomeController.index'
 
   # eg: GET /news/:id => NewsController.show
   makeRoute('/news')
@@ -24,12 +22,10 @@ navigator (makeRoute)->
     .GET_and_POST('detach/:id': 'detach')
 
   makeRoute('/products')
-    .REST 'all'
-    # Conf override
-    .localizeRoute('es', 'en')
+    .confOverride
+      localizeRoute: ['en', 'es']
+    .REST('all')
 
   makeRoute('/store')
     .REST('index', 'show')
-    # Conf override
-    .localizeRoute true
 ```
