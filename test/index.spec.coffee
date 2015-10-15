@@ -146,17 +146,17 @@ describe 'navigator', ->
 
             expect(routes).to.eql(expectedRoutes)
 
-        describe.only 'When overriding the default localizeRoute', ->
+        describe 'When overriding the default localizeRoute', ->
           it 'should create the regular routes, as well as localized versions of it, based on a locale object', ->
             routes = navigator (makeRoute)->
               makeRoute('/articles')
-              .confOverride
-                localizeRoute: ['en', 'es']
-                defaultLocale: 'en' # This is the module's default
-                localizedData: # Usually this should be avoided, a locales obj containing all routes locales should be passed to config instead
-                  en: '/articles'
-                  es: '/articulos'
-              .REST('all')
+                .confOverride
+                  localizeRoute: ['en', 'es'] # Defaults to false
+                  defaultLocale: 'en' # This is the module's default
+                  localizedData: # Usually this should be avoided, a locales obj containing all routes locales should be passed to config instead
+                    en: '/articles'
+                    es: '/articulos'
+                .REST('all')
 
             expectedRoutes =
               # En
@@ -170,12 +170,55 @@ describe 'navigator', ->
               # Es
               'GET /es/articulos':  'ArticlesController.index'
               'GET /es/articulos/:id':  'ArticlesController.show'
-              'GET /es/articulos/new': 'ArticlesController.new'
+              'GET /es/articulos/nuevo': 'ArticlesController.new'
               'POST /es/articulos': 'ArticlesController.create'
-              'GET /es/articulos/edit/:id':  'ArticlesController.edit'
+              'GET /es/articulos/editar/:id':  'ArticlesController.edit'
               'PUT /es/articulos/:id':  'ArticlesController.update'
               'DELETE /es/articulos/:id':  'ArticlesController.destroy'
 
-            console.inspect {routes}
-
             expect(routes).to.eql(expectedRoutes)
+
+  describe '.config', ->
+    it 'should modify the module configuration when valid data is passed', ->
+      navigator.config(
+        localizeRoute: ['en', 'es']
+        localizedData:
+          '/articles': {en: '/articles', es: '/articulos'}
+      )
+      routes = navigator (makeRoute)->
+        makeRoute('/articles')
+          .REST('edit')
+      expect(routes).to.eql(
+        'GET /articles/edit/:id':  'ArticlesController.edit'
+        'GET /es/articulos/editar/:id':  'ArticlesController.edit'
+      )
+
+    it 'should throw an error when invalid settings(attributes) are passed'
+
+  describe '.getConfig', ->
+    it 'should return a copy of the configuration object', ->
+      defaultConfig =
+        pathToRecordFormat: '*/:id' #'route/:id/:slug'
+        localizeRoute: false #['es', 'en']
+        defaultLocale: 'en'
+        prefixLocale: true
+        skipLocalePrefixOnDefaultLocale: true
+        localizedData: null
+        restFullActionsLocalization:
+          en: {edit: 'edit', new: 'new'}
+          es: {edit: 'editar', new: 'nuevo'}
+
+      customConfig =
+        pathToRecordFormat: '*/:id/:slug'
+        localizeRoute: ['es', 'en']
+        defaultLocale: 'en'
+        prefixLocale: false
+        localizedData:
+          '/products': {en: '/products', es: '/productos'}
+          '/articles': {en: '/articles', es: '/articulos'}
+
+      config1  = navigator.config(defaultConfig).getConfig()
+      config2  = navigator.config(customConfig).getConfig()
+
+      expect(config1).to.eql(defaultConfig)
+      expect(config2).to.eql(_.defaults({}, customConfig, defaultConfig))

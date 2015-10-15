@@ -4,7 +4,7 @@
 
   expect = require('chai').expect;
 
-  navigator = require('../index');
+  navigator = require('../index.coffee');
 
   _ = require('lodash');
 
@@ -33,24 +33,27 @@
     it('should return an empty object when an empty (or one that does not manipulate the passed arg) fn is provided to it', function() {
       return expect(navigator(function(makeRoute) {})).to.eql({});
     });
-    return describe('When passing route paths to the fn passed as argument to the provided fn passed to .setRoutes', function() {
+    describe('When passing route paths to the fn passed as argument to the provided fn passed to .setRoutes', function() {
       return describe('When calling sub-methods of the makeRoute fn (Which is passed by the navigator to the fn provided by the client)', function() {
+        var restfulRoutes;
+        restfulRoutes = {
+          'GET /robots': 'RobotsController.index',
+          'GET /robots/:id': 'RobotsController.show',
+          'GET /robots/new': 'RobotsController.new',
+          'POST /robots': 'RobotsController.create',
+          'GET /robots/edit/:id': 'RobotsController.edit',
+          'PUT /robots/:id': 'RobotsController.update',
+          'DELETE /robots/:id': 'RobotsController.destroy'
+        };
         describe('.REST', function() {
-          var restfulRoutes;
-          restfulRoutes = {
-            'GET /robots': 'RobotsController.index',
-            'GET /robots/:id': 'RobotsController.show',
-            'GET /robots/new': 'RobotsController.new',
-            'POST /robots': 'RobotsController.create',
-            'GET /robots/edit/:id': 'RobotsController.edit',
-            'PUT /robots/:id': 'RobotsController.update',
-            'DELETE /robots/:id': 'RobotsController.destroy'
-          };
           describe('When passing "all" as argument', function() {
             return it('should return a restful version of the passed route in a routes object', function() {
               var routes;
               routes = navigator(function(makeRoute) {
                 return makeRoute('/robots').REST('all');
+              });
+              console.inspect({
+                routes: routes
               });
               return expect(routes).to.eql(restfulRoutes);
             });
@@ -177,7 +180,7 @@
           });
         });
         return describe('.confOverride', function() {
-          return describe('When passing a custom controller', function() {
+          describe('When passing a custom controller', function() {
             return it('should override the guessed controller default for a given route', function() {
               var customNamedController, routes;
               customNamedController = 'InstitutionsController';
@@ -189,7 +192,124 @@
               return expect(routes['GET /museums']).to.equal(customNamedController + ".index");
             });
           });
+          describe('When overriding the default pathToRecordFormat', function() {
+            return it('should change how routes are built when using .REST', function() {
+              var expectedRoutes, routes;
+              routes = navigator(function(makeRoute) {
+                return makeRoute('/articles').confOverride({
+                  pathToRecordFormat: '*/:id/:slug'
+                }).REST('all');
+              });
+              expectedRoutes = {
+                'GET /articles': 'ArticlesController.index',
+                'GET /articles/:id/:slug': 'ArticlesController.show',
+                'GET /articles/new': 'ArticlesController.new',
+                'POST /articles': 'ArticlesController.create',
+                'GET /articles/edit/:id/:slug': 'ArticlesController.edit',
+                'PUT /articles/:id/:slug': 'ArticlesController.update',
+                'DELETE /articles/:id/:slug': 'ArticlesController.destroy'
+              };
+              return expect(routes).to.eql(expectedRoutes);
+            });
+          });
+          return describe('When overriding the default localizeRoute', function() {
+            return it('should create the regular routes, as well as localized versions of it, based on a locale object', function() {
+              var expectedRoutes, routes;
+              routes = navigator(function(makeRoute) {
+                return makeRoute('/articles').confOverride({
+                  localizeRoute: ['en', 'es'],
+                  defaultLocale: 'en',
+                  localizedData: {
+                    en: '/articles',
+                    es: '/articulos'
+                  }
+                }).REST('all');
+              });
+              expectedRoutes = {
+                'GET /articles': 'ArticlesController.index',
+                'GET /articles/:id': 'ArticlesController.show',
+                'GET /articles/new': 'ArticlesController.new',
+                'POST /articles': 'ArticlesController.create',
+                'GET /articles/edit/:id': 'ArticlesController.edit',
+                'PUT /articles/:id': 'ArticlesController.update',
+                'DELETE /articles/:id': 'ArticlesController.destroy',
+                'GET /es/articulos': 'ArticlesController.index',
+                'GET /es/articulos/:id': 'ArticlesController.show',
+                'GET /es/articulos/nuevo': 'ArticlesController.new',
+                'POST /es/articulos': 'ArticlesController.create',
+                'GET /es/articulos/editar/:id': 'ArticlesController.edit',
+                'PUT /es/articulos/:id': 'ArticlesController.update',
+                'DELETE /es/articulos/:id': 'ArticlesController.destroy'
+              };
+              return expect(routes).to.eql(expectedRoutes);
+            });
+          });
         });
+      });
+    });
+    describe('.config', function() {
+      it('should modify the module configuration when valid data is passed', function() {
+        var routes;
+        navigator.config({
+          localizeRoute: ['en', 'es'],
+          localizedData: {
+            '/articles': {
+              en: '/articles',
+              es: '/articulos'
+            }
+          }
+        });
+        routes = navigator(function(makeRoute) {
+          return makeRoute('/articles').REST('edit');
+        });
+        return expect(routes).to.eql({
+          'GET /articles/edit/:id': 'ArticlesController.edit',
+          'GET /es/articulos/editar/:id': 'ArticlesController.edit'
+        });
+      });
+      return it('should throw an error when invalid settings(attributes) are passed');
+    });
+    return describe('.getConfig', function() {
+      return it('should return a copy of the configuration object', function() {
+        var config1, config2, customConfig, defaultConfig;
+        defaultConfig = {
+          pathToRecordFormat: '*/:id',
+          localizeRoute: false,
+          defaultLocale: 'en',
+          prefixLocale: true,
+          skipLocalePrefixOnDefaultLocale: true,
+          localizedData: null,
+          restFullActionsLocalization: {
+            en: {
+              edit: 'edit',
+              "new": 'new'
+            },
+            es: {
+              edit: 'editar',
+              "new": 'nuevo'
+            }
+          }
+        };
+        customConfig = {
+          pathToRecordFormat: '*/:id/:slug',
+          localizeRoute: ['es', 'en'],
+          defaultLocale: 'en',
+          prefixLocale: false,
+          localizedData: {
+            '/products': {
+              en: '/products',
+              es: '/productos'
+            },
+            '/articles': {
+              en: '/articles',
+              es: '/articulos'
+            }
+          }
+        };
+        config1 = navigator.config(defaultConfig).getConfig();
+        config2 = navigator.config(customConfig).getConfig();
+        expect(config1).to.eql(defaultConfig);
+        return expect(config2).to.eql(_.defaults({}, customConfig, defaultConfig));
       });
     });
   });
