@@ -1,13 +1,16 @@
 do ->
   _ = require('lodash')
 
-  _optionsDefaults =
+  _config =
     #controller: 'StoreController'
     pathToRecordFormat: '*/:id' #'route/:id/:slug'
     localizeRoute: false #['es', 'en']
     defaultLocale: 'en'
     prefixLocale: true
     skipLocalePrefixOnDefaultLocale: true
+    restFullActionsLocalization:
+      en: {edit: 'edit', new: 'new'}
+      es: {edit: 'editar', new: 'nuevo'}
 
   _routeConf = null
 
@@ -23,10 +26,15 @@ do ->
       throw new Error('You must pass a function as argument')
 
   navigator.config = (options)->
+    _config = _.defaults({}, options, _config)
+    return navigator
+
+  navigator.getConfig = ()->
+    return _.cloneDeep(_config)
 
   _makeRoute = (route)->
     currentRoutes = {}
-    _routeConf = _optionsDefaults
+    _routeConf = _config
     #_makeRestfulRoutes(route, currentRoutes)
 
     _.extend(navigator._routes, currentRoutes)
@@ -43,9 +51,9 @@ do ->
           routePrefix = "/#{locale}"
         else
           routePrefix = ""
-        localizedData = _routeConf.localizedData or _routeConf.localizedData[@_currentRoot]
+        localizedData = _routeConf.localizedData[@_currentRoot]
         route = localizedData[locale]
-        restFulRoutes = _makeRestfulRoutes(filter, controllerName, route, routePrefix)
+        restFulRoutes = _makeRestfulRoutes(filter, controllerName, route, locale, routePrefix)
         _.extend(navigator._routes, restFulRoutes)
     else
       restFulRoutes = _makeRestfulRoutes(filter, controllerName, @_currentRoot)
@@ -82,7 +90,12 @@ do ->
       _makeRoute[VERB](pathObj)
 
   _makeRoute.confOverride = (options = {})->
-    _routeConf = _.defaults(options, _routeConf)
+    localizedData = {}
+    if options.localizedData
+      localizedData[@_currentRoot] = options.localizedData
+      localizedData = {localizedData}
+      delete options.localizedData
+    _routeConf = _.defaults({}, options, localizedData,  _routeConf)
     return this
 
   _makeCustomRoute = (VERB, pathObj)->
@@ -99,18 +112,20 @@ do ->
       navigator._routes["#{VERB} #{route}"] = "#{controllerName}.#{action}"
     return _makeRoute
 
-  _makeRestfulRoutes = (filter, controllerName, route, routePrefix = '')->
+  _makeRestfulRoutes = (filter, controllerName, route, locale = _config.defaultLocale, routePrefix = '')->
     singleRecordPathPostFix = _routeConf.pathToRecordFormat.replace('*/', '')
     actions = {index: true, show: true, new: true, create: true,edit: true, update: true, destroy: true}
     unless filter[0] is 'all'
       actions = if filter[0] is '!' then _.omit(actions, filter) else _.pick(actions, filter)
 
     routeObj = {}
+    restfulActionPath = _config.restFullActionsLocalization[locale]
+
     if actions.index   then routeObj["GET #{routePrefix}#{route}"] = "#{controllerName}.index"
     if actions.show    then routeObj["GET #{routePrefix}#{route}/#{singleRecordPathPostFix}"] = "#{controllerName}.show"
-    if actions.new     then routeObj["GET #{routePrefix}#{route}/new"] = "#{controllerName}.new"
+    if actions.new     then routeObj["GET #{routePrefix}#{route}/#{restfulActionPath.new}"] = "#{controllerName}.new"
     if actions.create  then routeObj["POST #{routePrefix}#{route}"] = "#{controllerName}.create"
-    if actions.edit    then routeObj["GET #{routePrefix}#{route}/edit/#{singleRecordPathPostFix}"] = "#{controllerName}.edit"
+    if actions.edit    then routeObj["GET #{routePrefix}#{route}/#{restfulActionPath.edit}/#{singleRecordPathPostFix}"] = "#{controllerName}.edit"
     if actions.update  then routeObj["PUT #{routePrefix}#{route}/#{singleRecordPathPostFix}"] = "#{controllerName}.update"
     if actions.destroy then routeObj["DELETE #{routePrefix}#{route}/#{singleRecordPathPostFix}"] = "#{controllerName}.destroy"
     return routeObj
