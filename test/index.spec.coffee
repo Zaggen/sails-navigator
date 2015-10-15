@@ -1,5 +1,5 @@
 expect = require('chai').expect
-navigator = require('../index')
+navigator = require('../index.coffee')
 _ = require('lodash')
 
 # Helpers
@@ -19,21 +19,22 @@ describe 'navigator', ->
 
   describe 'When passing route paths to the fn passed as argument to the provided fn passed to .setRoutes', ->
     describe 'When calling sub-methods of the makeRoute fn (Which is passed by the navigator to the fn provided by the client)', ->
-      describe '.REST', ->
-        restfulRoutes =
-          'GET /robots':  'RobotsController.index'
-          'GET /robots/:id':  'RobotsController.show'
-          'GET /robots/new': 'RobotsController.new'
-          'POST /robots': 'RobotsController.create'
-          'GET /robots/edit/:id':  'RobotsController.edit'
-          'PUT /robots/:id':  'RobotsController.update'
-          'DELETE /robots/:id':  'RobotsController.destroy'
+      restfulRoutes =
+        'GET /robots':  'RobotsController.index'
+        'GET /robots/:id':  'RobotsController.show'
+        'GET /robots/new': 'RobotsController.new'
+        'POST /robots': 'RobotsController.create'
+        'GET /robots/edit/:id':  'RobotsController.edit'
+        'PUT /robots/:id':  'RobotsController.update'
+        'DELETE /robots/:id':  'RobotsController.destroy'
 
+      describe '.REST', ->
         describe 'When passing "all" as argument', ->
           it 'should return a restful version of the passed route in a routes object', ->
             routes = navigator (makeRoute)->
               makeRoute('/robots')
                 .REST('all')
+            console.inspect {routes}
             expect(routes).to.eql(restfulRoutes)
 
         describe 'When passing a list of the actions to include as argument', ->
@@ -126,3 +127,55 @@ describe 'navigator', ->
 
             expect(routes['GET /museums']).to.equal("#{customNamedController}.index")
 
+        describe 'When overriding the default pathToRecordFormat', ->
+          it 'should change how routes are built when using .REST', ->
+            routes = navigator (makeRoute)->
+              makeRoute('/articles')
+                .confOverride
+                  pathToRecordFormat: '*/:id/:slug'
+                .REST('all')
+
+            expectedRoutes =
+              'GET /articles':  'ArticlesController.index'
+              'GET /articles/:id/:slug':  'ArticlesController.show'
+              'GET /articles/new': 'ArticlesController.new'
+              'POST /articles': 'ArticlesController.create'
+              'GET /articles/edit/:id/:slug':  'ArticlesController.edit'
+              'PUT /articles/:id/:slug':  'ArticlesController.update'
+              'DELETE /articles/:id/:slug':  'ArticlesController.destroy'
+
+            expect(routes).to.eql(expectedRoutes)
+
+        describe.only 'When overriding the default localizeRoute', ->
+          it 'should create the regular routes, as well as localized versions of it, based on a locale object', ->
+            routes = navigator (makeRoute)->
+              makeRoute('/articles')
+              .confOverride
+                localizeRoute: ['en', 'es']
+                defaultLocale: 'en' # This is the module's default
+                localizedData: # Usually this should be avoided, a locales obj containing all routes locales should be passed to config instead
+                  en: '/articles'
+                  es: '/articulos'
+              .REST('all')
+
+            expectedRoutes =
+              # En
+              'GET /articles':  'ArticlesController.index'
+              'GET /articles/:id':  'ArticlesController.show'
+              'GET /articles/new': 'ArticlesController.new'
+              'POST /articles': 'ArticlesController.create'
+              'GET /articles/edit/:id':  'ArticlesController.edit'
+              'PUT /articles/:id':  'ArticlesController.update'
+              'DELETE /articles/:id':  'ArticlesController.destroy'
+              # Es
+              'GET /es/articulos':  'ArticlesController.index'
+              'GET /es/articulos/:id':  'ArticlesController.show'
+              'GET /es/articulos/new': 'ArticlesController.new'
+              'POST /es/articulos': 'ArticlesController.create'
+              'GET /es/articulos/edit/:id':  'ArticlesController.edit'
+              'PUT /es/articulos/:id':  'ArticlesController.update'
+              'DELETE /es/articulos/:id':  'ArticlesController.destroy'
+
+            console.inspect {routes}
+
+            expect(routes).to.eql(expectedRoutes)
