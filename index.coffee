@@ -11,9 +11,10 @@ do ->
     restFullActionsLocalization:
       en: {edit: 'edit', new: 'new'}
       es: {edit: 'editar', new: 'nuevo'}
+    rootAsControllerPath: false
 
   _routeConf = null
-  _currentRoot = null
+  _currentRoute = null
   # This vars are used by .path, to keep track of the original data set in
   # the _makeRoute instead of the one set via _makeRoute.path ...
   _originalRouteConf = null
@@ -46,7 +47,7 @@ do ->
 
     _.extend(navigator._routes, currentRoutes)
     # This allows chaining
-    _currentRoot = route
+    _currentRoute = route
     return _makeRoute
 
   _makeRoute.REST = (filter...)->
@@ -58,12 +59,12 @@ do ->
           routePrefix = "/#{locale}"
         else
           routePrefix = ""
-        localizedData = _routeConf.localizedData[_currentRoot]
+        localizedData = _routeConf.localizedData[_currentRoute]
         route = localizedData[locale]
         restFulRoutes = _makeRestfulRoutes(filter, controllerName, route, locale, routePrefix)
         _.extend(navigator._routes, restFulRoutes)
     else
-      restFulRoutes = _makeRestfulRoutes(filter, controllerName, _currentRoot)
+      restFulRoutes = _makeRestfulRoutes(filter, controllerName, _currentRoute)
       _.extend(navigator._routes, restFulRoutes)
 
     return this
@@ -97,12 +98,12 @@ do ->
       _makeRoute[VERB](pathObj)
 
   # When i call path, i should get the original _makeRoute data
-  # which includes the _currentRoot and _routeConf
+  # which includes the _currentRoute and _routeConf
   _makeRoute.path = (path)->
-    _originalCurrentRoot = _originalCurrentRoot or _currentRoot
+    _originalCurrentRoot = _originalCurrentRoot or _currentRoute
     _originalRouteConf = _originalRouteConf or _routeConf
     _routeConf = _originalRouteConf
-    _currentRoot = _originalCurrentRoot + path
+    _currentRoute = _originalCurrentRoot + path
     return _makeRoute
 
   # In case you want to keep .path data
@@ -111,7 +112,7 @@ do ->
   _makeRoute.confOverride = (options = {})->
     localizedData = {}
     if options.localizedData
-      localizedData[_currentRoot] = options.localizedData
+      localizedData[_currentRoute] = options.localizedData
       localizedData = {localizedData}
       delete options.localizedData
     _routeConf = _.defaults({}, options, localizedData,  _routeConf)
@@ -123,7 +124,7 @@ do ->
 
   _makeCustomRoute = (VERB, pathObj)->
     for path, action of pathObj
-      route = _currentRoot
+      route = _currentRoute
       controllerName = _getControllerName()
       # If the Controller is specified in the pathObj, it overrides any other controller options
       actionParts = action.split('.')
@@ -145,19 +146,32 @@ do ->
 
     if actions.index   then routeObj["GET #{routePrefix}#{route}"] = "#{controllerName}.index"
     if actions.show    then routeObj["GET #{routePrefix}#{route}/#{singleRecordPathPostFix}"] = "#{controllerName}.show"
+
+    # Since its likely that a controller may force the browser to post back on a failed .create to .new,
+    # we add the POST option, so that this action can get this data.
     if actions.new     then routeObj["GET #{routePrefix}#{route}/#{restfulActionPath.new}"] = "#{controllerName}.new"
+    if actions.new     then routeObj["POST #{routePrefix}#{route}/#{restfulActionPath.new}"] = "#{controllerName}.new"
+
     if actions.create  then routeObj["POST #{routePrefix}#{route}"] = "#{controllerName}.create"
+
+    # Since its likely that a controller may force the browser to post back on a failed .update to .edit,
+    # we add the POST option, so that this action can get this data.
     if actions.edit    then routeObj["GET #{routePrefix}#{route}/#{restfulActionPath.edit}/#{singleRecordPathPostFix}"] = "#{controllerName}.edit"
+    if actions.edit    then routeObj["POST #{routePrefix}#{route}/#{restfulActionPath.edit}/#{singleRecordPathPostFix}"] = "#{controllerName}.edit"
+
     if actions.update  then routeObj["PUT #{routePrefix}#{route}/#{singleRecordPathPostFix}"] = "#{controllerName}.update"
     if actions.destroy then routeObj["DELETE #{routePrefix}#{route}/#{singleRecordPathPostFix}"] = "#{controllerName}.destroy"
     return routeObj
 
   _getControllerName = ->
-    routeFragments = _currentRoot.split('/')
-    lastPath = routeFragments.pop()
-    root = routeFragments.join('/')
-    root = if root is '' then '' else "#{root.substr(1)}/"
-    guessedControllerName = "#{root}#{_.capitalize(lastPath)}Controller"
-    return _routeConf.controller or guessedControllerName
+    route = _currentRoute.substr(1)
+    routeFragments = _.clone(route).split('/')
+    guessedControllerName = _.capitalize(routeFragments.pop())
+    if routeFragments.length > 0
+      root = if _routeConf.rootAsControllerPath then "#{routeFragments.shift()}/" else ''
+      prefix =_.map(routeFragments, (path)-> _.capitalize(path)).join('')
+      guessedControllerName = root + prefix + guessedControllerName
+
+    return _routeConf.controller or "#{guessedControllerName}Controller"
 
   module.exports = navigator

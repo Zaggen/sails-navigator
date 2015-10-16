@@ -3,7 +3,7 @@
   var slice = [].slice;
 
   (function() {
-    var VERBS, _, _config, _currentRoot, _getControllerName, _makeCustomRoute, _makeRestfulRoutes, _makeRoute, _originalCurrentRoot, _originalRouteConf, _routeConf, navigator;
+    var VERBS, _, _config, _currentRoute, _getControllerName, _makeCustomRoute, _makeRestfulRoutes, _makeRoute, _originalCurrentRoot, _originalRouteConf, _routeConf, navigator;
     _ = require('lodash');
     _config = {
       pathToRecordFormat: '*/:id',
@@ -20,10 +20,11 @@
           edit: 'editar',
           "new": 'nuevo'
         }
-      }
+      },
+      rootAsControllerPath: false
     };
     _routeConf = null;
-    _currentRoot = null;
+    _currentRoute = null;
     _originalRouteConf = null;
     _originalCurrentRoot = null;
     navigator = function(fn) {
@@ -53,7 +54,7 @@
       currentRoutes = {};
       _routeConf = _config;
       _.extend(navigator._routes, currentRoutes);
-      _currentRoot = route;
+      _currentRoute = route;
       return _makeRoute;
     };
     _makeRoute.REST = function() {
@@ -69,13 +70,13 @@
           } else {
             routePrefix = "";
           }
-          localizedData = _routeConf.localizedData[_currentRoot];
+          localizedData = _routeConf.localizedData[_currentRoute];
           route = localizedData[locale];
           restFulRoutes = _makeRestfulRoutes(filter, controllerName, route, locale, routePrefix);
           _.extend(navigator._routes, restFulRoutes);
         }
       } else {
-        restFulRoutes = _makeRestfulRoutes(filter, controllerName, _currentRoot);
+        restFulRoutes = _makeRestfulRoutes(filter, controllerName, _currentRoute);
         _.extend(navigator._routes, restFulRoutes);
       }
       return this;
@@ -112,10 +113,10 @@
       });
     };
     _makeRoute.path = function(path) {
-      _originalCurrentRoot = _originalCurrentRoot || _currentRoot;
+      _originalCurrentRoot = _originalCurrentRoot || _currentRoute;
       _originalRouteConf = _originalRouteConf || _routeConf;
       _routeConf = _originalRouteConf;
-      _currentRoot = _originalCurrentRoot + path;
+      _currentRoute = _originalCurrentRoot + path;
       return _makeRoute;
     };
     _makeRoute.confOverride = function(options) {
@@ -125,7 +126,7 @@
       }
       localizedData = {};
       if (options.localizedData) {
-        localizedData[_currentRoot] = options.localizedData;
+        localizedData[_currentRoute] = options.localizedData;
         localizedData = {
           localizedData: localizedData
         };
@@ -144,7 +145,7 @@
       var action, actionParts, controllerName, path, route;
       for (path in pathObj) {
         action = pathObj[path];
-        route = _currentRoot;
+        route = _currentRoute;
         controllerName = _getControllerName();
         actionParts = action.split('.');
         if (actionParts.length > 1) {
@@ -188,11 +189,17 @@
       if (actions["new"]) {
         routeObj["GET " + routePrefix + route + "/" + restfulActionPath["new"]] = controllerName + ".new";
       }
+      if (actions["new"]) {
+        routeObj["POST " + routePrefix + route + "/" + restfulActionPath["new"]] = controllerName + ".new";
+      }
       if (actions.create) {
         routeObj["POST " + routePrefix + route] = controllerName + ".create";
       }
       if (actions.edit) {
         routeObj["GET " + routePrefix + route + "/" + restfulActionPath.edit + "/" + singleRecordPathPostFix] = controllerName + ".edit";
+      }
+      if (actions.edit) {
+        routeObj["POST " + routePrefix + route + "/" + restfulActionPath.edit + "/" + singleRecordPathPostFix] = controllerName + ".edit";
       }
       if (actions.update) {
         routeObj["PUT " + routePrefix + route + "/" + singleRecordPathPostFix] = controllerName + ".update";
@@ -203,13 +210,18 @@
       return routeObj;
     };
     _getControllerName = function() {
-      var guessedControllerName, lastPath, root, routeFragments;
-      routeFragments = _currentRoot.split('/');
-      lastPath = routeFragments.pop();
-      root = routeFragments.join('/');
-      root = root === '' ? '' : (root.substr(1)) + "/";
-      guessedControllerName = "" + root + (_.capitalize(lastPath)) + "Controller";
-      return _routeConf.controller || guessedControllerName;
+      var guessedControllerName, prefix, root, route, routeFragments;
+      route = _currentRoute.substr(1);
+      routeFragments = _.clone(route).split('/');
+      guessedControllerName = _.capitalize(routeFragments.pop());
+      if (routeFragments.length > 0) {
+        root = _routeConf.rootAsControllerPath ? (routeFragments.shift()) + "/" : '';
+        prefix = _.map(routeFragments, function(path) {
+          return _.capitalize(path);
+        }).join('');
+        guessedControllerName = root + prefix + guessedControllerName;
+      }
+      return _routeConf.controller || (guessedControllerName + "Controller");
     };
     return module.exports = navigator;
   })();
