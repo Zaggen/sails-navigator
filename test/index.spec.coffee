@@ -23,8 +23,10 @@ describe 'navigator', ->
         'GET /robots':  'RobotsController.index'
         'GET /robots/:id':  'RobotsController.show'
         'GET /robots/new': 'RobotsController.new'
+        'POST /robots/new': 'RobotsController.new' # For special cases when .create fails and post backs data to .new
         'POST /robots': 'RobotsController.create'
         'GET /robots/edit/:id':  'RobotsController.edit'
+        'POST /robots/edit/:id':  'RobotsController.edit'  # For special cases when .update fails and post backs data to .edit
         'PUT /robots/:id':  'RobotsController.update'
         'DELETE /robots/:id':  'RobotsController.destroy'
 
@@ -119,6 +121,8 @@ describe 'navigator', ->
           routes = navigator (makeRoute)->
             makeRoute('/admin')
               .path('/robots')
+                .confOverride
+                  rootAsControllerPath: true
                 .GET('': 'index')
 
           expect(routes).to.eql('GET /admin/robots': 'admin/RobotsController.index')
@@ -129,6 +133,7 @@ describe 'navigator', ->
               makeRoute('/admin')
                 .confOverride
                     pathToRecordFormat: '*/:id/:slug'
+                    rootAsControllerPath: true
                 .path('/robots')
                   .confOverride
                       pathToRecordFormat: '*/:id'
@@ -140,6 +145,7 @@ describe 'navigator', ->
               'PUT /admin/robots/:id': 'admin/RobotsController.update'
               'PUT /admin/articles/:id/:slug': 'admin/ArticlesController.update'
             )
+
 
       describe '.controller', ->
         describe 'When passing a custom controller', ->
@@ -176,8 +182,10 @@ describe 'navigator', ->
               'GET /articles':  'ArticlesController.index'
               'GET /articles/:id/:slug':  'ArticlesController.show'
               'GET /articles/new': 'ArticlesController.new'
+              'POST /articles/new': 'ArticlesController.new'
               'POST /articles': 'ArticlesController.create'
               'GET /articles/edit/:id/:slug':  'ArticlesController.edit'
+              'POST /articles/edit/:id/:slug':  'ArticlesController.edit'
               'PUT /articles/:id/:slug':  'ArticlesController.update'
               'DELETE /articles/:id/:slug':  'ArticlesController.destroy'
 
@@ -200,20 +208,38 @@ describe 'navigator', ->
               'GET /articles':  'ArticlesController.index'
               'GET /articles/:id':  'ArticlesController.show'
               'GET /articles/new': 'ArticlesController.new'
+              'POST /articles/new': 'ArticlesController.new'
               'POST /articles': 'ArticlesController.create'
               'GET /articles/edit/:id':  'ArticlesController.edit'
+              'POST /articles/edit/:id':  'ArticlesController.edit'
               'PUT /articles/:id':  'ArticlesController.update'
               'DELETE /articles/:id':  'ArticlesController.destroy'
               # Es
               'GET /es/articulos':  'ArticlesController.index'
               'GET /es/articulos/:id':  'ArticlesController.show'
               'GET /es/articulos/nuevo': 'ArticlesController.new'
+              'POST /es/articulos/nuevo': 'ArticlesController.new'
               'POST /es/articulos': 'ArticlesController.create'
               'GET /es/articulos/editar/:id':  'ArticlesController.edit'
+              'POST /es/articulos/editar/:id':  'ArticlesController.edit'
               'PUT /es/articulos/:id':  'ArticlesController.update'
               'DELETE /es/articulos/:id':  'ArticlesController.destroy'
 
             expect(routes).to.eql(expectedRoutes)
+
+        describe 'When setting rootAsControllerPath as true', ->
+          it 'should use the route\'s root path as the controllerPath', ->
+            routes = navigator (makeRoute)->
+              makeRoute('/admin/articles')
+                .confOverride
+                  rootAsControllerPath: true
+                .REST('index')
+
+            expectedRoutes =
+              'GET /admin/articles':  'admin/ArticlesController.index'
+
+            expect(routes).to.eql(expectedRoutes)
+
 
         it 'should only override the settings for a given route, and not the rest', ->
           customNamedController = 'InstitutionsController'
@@ -240,7 +266,9 @@ describe 'navigator', ->
           .REST('edit')
       expect(routes).to.eql(
         'GET /articles/edit/:id':  'ArticlesController.edit'
+        'POST /articles/edit/:id':  'ArticlesController.edit'
         'GET /es/articulos/editar/:id':  'ArticlesController.edit'
+        'POST /es/articulos/editar/:id':  'ArticlesController.edit'
       )
 
     it 'should throw an error when invalid settings(attributes) are passed'
@@ -257,6 +285,7 @@ describe 'navigator', ->
         restFullActionsLocalization:
           en: {edit: 'edit', new: 'new'}
           es: {edit: 'editar', new: 'nuevo'}
+        rootAsControllerPath: false
 
       customConfig =
         pathToRecordFormat: '*/:id/:slug'

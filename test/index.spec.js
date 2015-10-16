@@ -40,8 +40,10 @@
           'GET /robots': 'RobotsController.index',
           'GET /robots/:id': 'RobotsController.show',
           'GET /robots/new': 'RobotsController.new',
+          'POST /robots/new': 'RobotsController.new',
           'POST /robots': 'RobotsController.create',
           'GET /robots/edit/:id': 'RobotsController.edit',
+          'POST /robots/edit/:id': 'RobotsController.edit',
           'PUT /robots/:id': 'RobotsController.update',
           'DELETE /robots/:id': 'RobotsController.destroy'
         };
@@ -180,7 +182,9 @@
           it('It should create a route with route passed to makeRoute as prefix', function() {
             var routes;
             routes = navigator(function(makeRoute) {
-              return makeRoute('/admin').path('/robots').GET({
+              return makeRoute('/admin').path('/robots').confOverride({
+                rootAsControllerPath: true
+              }).GET({
                 '': 'index'
               });
             });
@@ -193,7 +197,8 @@
               var routes;
               routes = navigator(function(makeRoute) {
                 return makeRoute('/admin').confOverride({
-                  pathToRecordFormat: '*/:id/:slug'
+                  pathToRecordFormat: '*/:id/:slug',
+                  rootAsControllerPath: true
                 }).path('/robots').confOverride({
                   pathToRecordFormat: '*/:id'
                 }).REST('update').path('/articles').REST('update');
@@ -242,8 +247,10 @@
                 'GET /articles': 'ArticlesController.index',
                 'GET /articles/:id/:slug': 'ArticlesController.show',
                 'GET /articles/new': 'ArticlesController.new',
+                'POST /articles/new': 'ArticlesController.new',
                 'POST /articles': 'ArticlesController.create',
                 'GET /articles/edit/:id/:slug': 'ArticlesController.edit',
+                'POST /articles/edit/:id/:slug': 'ArticlesController.edit',
                 'PUT /articles/:id/:slug': 'ArticlesController.update',
                 'DELETE /articles/:id/:slug': 'ArticlesController.destroy'
               };
@@ -267,17 +274,35 @@
                 'GET /articles': 'ArticlesController.index',
                 'GET /articles/:id': 'ArticlesController.show',
                 'GET /articles/new': 'ArticlesController.new',
+                'POST /articles/new': 'ArticlesController.new',
                 'POST /articles': 'ArticlesController.create',
                 'GET /articles/edit/:id': 'ArticlesController.edit',
+                'POST /articles/edit/:id': 'ArticlesController.edit',
                 'PUT /articles/:id': 'ArticlesController.update',
                 'DELETE /articles/:id': 'ArticlesController.destroy',
                 'GET /es/articulos': 'ArticlesController.index',
                 'GET /es/articulos/:id': 'ArticlesController.show',
                 'GET /es/articulos/nuevo': 'ArticlesController.new',
+                'POST /es/articulos/nuevo': 'ArticlesController.new',
                 'POST /es/articulos': 'ArticlesController.create',
                 'GET /es/articulos/editar/:id': 'ArticlesController.edit',
+                'POST /es/articulos/editar/:id': 'ArticlesController.edit',
                 'PUT /es/articulos/:id': 'ArticlesController.update',
                 'DELETE /es/articulos/:id': 'ArticlesController.destroy'
+              };
+              return expect(routes).to.eql(expectedRoutes);
+            });
+          });
+          describe('When setting rootAsControllerPath as true', function() {
+            return it('should use the route\'s root path as the controllerPath', function() {
+              var expectedRoutes, routes;
+              routes = navigator(function(makeRoute) {
+                return makeRoute('/admin/articles').confOverride({
+                  rootAsControllerPath: true
+                }).REST('index');
+              });
+              expectedRoutes = {
+                'GET /admin/articles': 'admin/ArticlesController.index'
               };
               return expect(routes).to.eql(expectedRoutes);
             });
@@ -314,7 +339,9 @@
         });
         return expect(routes).to.eql({
           'GET /articles/edit/:id': 'ArticlesController.edit',
-          'GET /es/articulos/editar/:id': 'ArticlesController.edit'
+          'POST /articles/edit/:id': 'ArticlesController.edit',
+          'GET /es/articulos/editar/:id': 'ArticlesController.edit',
+          'POST /es/articulos/editar/:id': 'ArticlesController.edit'
         });
       });
       return it('should throw an error when invalid settings(attributes) are passed');
@@ -338,7 +365,8 @@
               edit: 'editar',
               "new": 'nuevo'
             }
-          }
+          },
+          rootAsControllerPath: false
         };
         customConfig = {
           pathToRecordFormat: '*/:id/:slug',
