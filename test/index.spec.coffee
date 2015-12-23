@@ -31,12 +31,25 @@ describe 'navigator', ->
         'DELETE /robots/:id':  'RobotsController.destroy'
 
       describe '.REST', ->
-        describe 'When passing "all" as argument', ->
+        describe.only 'When passing "all" as argument', ->
           it 'should return a restful version of the passed route in a routes object', ->
             routes = navigator (makeRoute)->
               makeRoute('/robots')
                 .REST('all')
             expect(routes).to.eql(restfulRoutes)
+
+          it 'should always place the index, edit and new action before any other action', ->
+            routes = navigator (makeRoute)->
+              makeRoute('/robots')
+                .REST('all')
+
+            routes = _.map(routes, (action, route)-> route)
+
+            expect(0 <= routes.indexOf('GET /robots') <= 4).to.be.true
+            expect(0 <= routes.indexOf('GET /robots/new') <= 4).to.be.true
+            expect(0 <= routes.indexOf('POST /robots/new') <= 4).to.be.true
+            expect(0 <= routes.indexOf('GET /robots/edit/:id') <= 4).to.be.true
+            expect(0 <= routes.indexOf('POST /robots/edit/:id') <= 4).to.be.true
 
         describe 'When passing a list of the actions to include as argument', ->
           it 'should return a restful version of the passed route with only the included actions in a routes object', ->
