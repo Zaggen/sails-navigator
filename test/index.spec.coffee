@@ -31,7 +31,7 @@ describe 'navigator', ->
         'DELETE /robots/:id':  'RobotsController.destroy'
 
       describe '.REST', ->
-        describe.only 'When passing "all" as argument', ->
+        describe 'When passing "all" as argument', ->
           it 'should return a restful version of the passed route in a routes object', ->
             routes = navigator (makeRoute)->
               makeRoute('/robots')
