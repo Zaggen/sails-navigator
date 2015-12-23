@@ -137,7 +137,7 @@ do ->
 
   _makeRestfulRoutes = (filter, controllerName, route, locale = _config.defaultLocale, routePrefix = '')->
     singleRecordPathPostFix = _routeConf.pathToRecordFormat.replace('*/', '')
-    actions = {index: true, show: true, new: true, create: true,edit: true, update: true, destroy: true}
+    actions = {index: true, new: true, create: true,edit: true, show: true, update: true, destroy: true}
     unless filter[0] is 'all'
       actions = if filter[0] is '!' then _.omit(actions, filter) else _.pick(actions, filter)
 
@@ -145,19 +145,20 @@ do ->
     restfulActionPath = _config.restFullActionsLocalization[locale]
 
     if actions.index   then routeObj["GET #{routePrefix}#{route}"] = "#{controllerName}.index"
-    if actions.show    then routeObj["GET #{routePrefix}#{route}/#{singleRecordPathPostFix}"] = "#{controllerName}.show"
 
     # Since its likely that a controller may force the browser to post back on a failed .create to .new,
     # we add the POST option, so that this action can get this data.
     if actions.new     then routeObj["GET #{routePrefix}#{route}/#{restfulActionPath.new}"] = "#{controllerName}.new"
     if actions.new     then routeObj["POST #{routePrefix}#{route}/#{restfulActionPath.new}"] = "#{controllerName}.new"
 
-    if actions.create  then routeObj["POST #{routePrefix}#{route}"] = "#{controllerName}.create"
-
     # Since its likely that a controller may force the browser to post back on a failed .update to .edit,
     # we add the POST option, so that this action can get this data.
     if actions.edit    then routeObj["GET #{routePrefix}#{route}/#{restfulActionPath.edit}/#{singleRecordPathPostFix}"] = "#{controllerName}.edit"
     if actions.edit    then routeObj["POST #{routePrefix}#{route}/#{restfulActionPath.edit}/#{singleRecordPathPostFix}"] = "#{controllerName}.edit"
+
+    if actions.show    then routeObj["GET #{routePrefix}#{route}/#{singleRecordPathPostFix}"] = "#{controllerName}.show"
+
+    if actions.create  then routeObj["POST #{routePrefix}#{route}"] = "#{controllerName}.create"
 
     if actions.update  then routeObj["PUT #{routePrefix}#{route}/#{singleRecordPathPostFix}"] = "#{controllerName}.update"
     if actions.destroy then routeObj["DELETE #{routePrefix}#{route}/#{singleRecordPathPostFix}"] = "#{controllerName}.destroy"
