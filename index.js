@@ -213,7 +213,7 @@
       var guessedControllerName, prefix, root, route, routeFragments;
       route = _currentRoute.substr(1);
       routeFragments = _.clone(route).split('/');
-      guessedControllerName = _.capitalize(routeFragments.pop());
+      guessedControllerName = _.capitalize(_.camelCase(routeFragments.pop()));
       if (routeFragments.length > 0) {
         root = _routeConf.rootAsControllerPath ? (routeFragments.shift()) + "/" : '';
         prefix = _.map(routeFragments, function(path) {
