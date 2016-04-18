@@ -47,6 +47,24 @@
           'PUT /robots/:id': 'RobotsController.update',
           'DELETE /robots/:id': 'RobotsController.destroy'
         };
+        describe('When using any sub-method', function() {
+          it('should guess the controllerName (properly camelCased)', function() {
+            var guessedControllerName;
+            guessedControllerName = _.values(navigator(function(fn) {
+              return fn('/robots').REST('all');
+            }))[0].split('.')[0];
+            return expect(guessedControllerName).to.equal('RobotsController');
+          });
+          return describe('When passing a route in kebab-case (words separated by hyphens)', function() {
+            return it('should guess the controller equivalent in camelCase', function() {
+              var guessedControllerName;
+              guessedControllerName = _.values(navigator(function(fn) {
+                return fn('/kebab-case').REST('all');
+              }))[0].split('.')[0];
+              return expect(guessedControllerName).to.equal('KebabCaseController');
+            });
+          });
+        });
         describe('.REST', function() {
           describe('When passing "all" as argument', function() {
             it('should return a restful version of the passed route in a routes object', function() {
@@ -56,7 +74,7 @@
               });
               return expect(routes).to.eql(restfulRoutes);
             });
-            it('should always place the index, edit and new action before any other action', function() {
+            return it('should always place the index, edit and new action before any other action', function() {
               var ref, ref1, ref2, ref3, ref4, routes;
               routes = navigator(function(makeRoute) {
                 return makeRoute('/robots').REST('all');
@@ -69,15 +87,6 @@
               expect((0 <= (ref2 = routes.indexOf('POST /robots/new')) && ref2 <= 4)).to.be["true"];
               expect((0 <= (ref3 = routes.indexOf('GET /robots/edit/:id')) && ref3 <= 4)).to.be["true"];
               return expect((0 <= (ref4 = routes.indexOf('POST /robots/edit/:id')) && ref4 <= 4)).to.be["true"];
-            });
-            return describe('When passing a route in kebab-case (words separated by hyphens)', function() {
-              return it('should guess the controller equivalent in camelCase', function() {
-                var guessedControllerName;
-                guessedControllerName = _.values(navigator(function(fn) {
-                  return fn('/kebab-case').REST('all');
-                }))[0].split('.')[0];
-                return expect(guessedControllerName).to.equal('KebabCaseController');
-              });
             });
           });
           describe('When passing a list of the actions to include as argument', function() {

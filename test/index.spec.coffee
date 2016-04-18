@@ -18,6 +18,7 @@ describe 'navigator', ->
     expect(navigator((makeRoute)->)).to.eql({})
 
   describe 'When passing route paths to the fn passed as argument to the provided fn passed to .setRoutes', ->
+
     describe 'When calling sub-methods of the makeRoute fn (Which is passed by the navigator to the fn provided by the client)', ->
       restfulRoutes =
         'GET /robots':  'RobotsController.index'
@@ -29,6 +30,16 @@ describe 'navigator', ->
         'POST /robots/edit/:id':  'RobotsController.edit'  # For special cases when .update fails and post backs data to .edit
         'PUT /robots/:id':  'RobotsController.update'
         'DELETE /robots/:id':  'RobotsController.destroy'
+
+      describe 'When using any sub-method', ->
+        it 'should guess the controllerName (properly camelCased)', ->
+          guessedControllerName = _.values(navigator((fn)-> fn('/robots').REST('all')))[0].split('.')[0]
+          expect(guessedControllerName).to.equal('RobotsController')
+
+        describe 'When passing a route in kebab-case (words separated by hyphens)', ->
+          it 'should guess the controller equivalent in camelCase', ->
+            guessedControllerName = _.values(navigator((fn)-> fn('/kebab-case').REST('all')))[0].split('.')[0]
+            expect(guessedControllerName).to.equal('KebabCaseController')
 
       describe '.REST', ->
         describe 'When passing "all" as argument', ->
@@ -50,13 +61,6 @@ describe 'navigator', ->
             expect(0 <= routes.indexOf('POST /robots/new') <= 4).to.be.true
             expect(0 <= routes.indexOf('GET /robots/edit/:id') <= 4).to.be.true
             expect(0 <= routes.indexOf('POST /robots/edit/:id') <= 4).to.be.true
-
-          describe 'When passing a route in kebab-case (words separated by hyphens)', ->
-            it 'should guess the controller equivalent in camelCase', ->
-              guessedControllerName = _.values(navigator((fn)-> fn('/kebab-case').REST('all')))[0].split('.')[0]
-
-              expect(guessedControllerName).to.equal('KebabCaseController')
-
 
         describe 'When passing a list of the actions to include as argument', ->
           it 'should return a restful version of the passed route with only the included actions in a routes object', ->
