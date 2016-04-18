@@ -51,6 +51,13 @@ describe 'navigator', ->
             expect(0 <= routes.indexOf('GET /robots/edit/:id') <= 4).to.be.true
             expect(0 <= routes.indexOf('POST /robots/edit/:id') <= 4).to.be.true
 
+          describe 'When passing a route in kebab-case (words separated by hyphens)', ->
+            it 'should guess the controller equivalent in camelCase', ->
+              guessedControllerName = _.values(navigator((fn)-> fn('/kebab-case').REST('all')))[0].split('.')[0]
+
+              expect(guessedControllerName).to.equal('KebabCaseController')
+
+
         describe 'When passing a list of the actions to include as argument', ->
           it 'should return a restful version of the passed route with only the included actions in a routes object', ->
             routes = navigator (makeRoute)->
