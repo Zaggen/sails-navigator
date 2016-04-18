@@ -1,6 +1,6 @@
 {
   "name": "sails-navigator",
-  "version": "0.7.4",
+  "version": "0.7.5",
   "description": "A route manager system that creates sails.js routes in a more manageable way",
   "main": "index.js",
   "scripts": {
