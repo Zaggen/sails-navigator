@@ -170,6 +170,22 @@ describe 'navigator', ->
               'PUT /admin/articles/:id/:slug': 'admin/ArticlesController.update'
             )
 
+        describe 'When using ignoreRootForControllerName option', ->
+          it 'It should guess the controllerName without taking the root into account', ->
+            routes = navigator (makeRoute)->
+              makeRoute('/api')
+              .confOverride
+                  ignoreRootForControllerName: true
+              .path('/robots')
+                .REST('index')
+              .path('/articles')
+                .REST('index')
+
+            expect(routes).to.eql(
+              'GET /api/robots': 'RobotsController.index'
+              'GET /api/articles': 'ArticlesController.index'
+            )
+
 
       describe '.controller', ->
         describe 'When passing a custom controller', ->
