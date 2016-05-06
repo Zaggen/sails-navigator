@@ -224,7 +224,7 @@
               'GET /admin/robots': 'admin/RobotsController.index'
             });
           });
-          return describe('When chaining path', function() {
+          describe('When chaining path', function() {
             return it('It will always refer back to the initial route data', function() {
               var routes;
               routes = navigator(function(makeRoute) {
@@ -238,6 +238,20 @@
               return expect(routes).to.eql({
                 'PUT /admin/robots/:id': 'admin/RobotsController.update',
                 'PUT /admin/articles/:id/:slug': 'admin/ArticlesController.update'
+              });
+            });
+          });
+          return describe('When using ignoreRootForControllerName option', function() {
+            return it('It should guess the controllerName without taking the root into account', function() {
+              var routes;
+              routes = navigator(function(makeRoute) {
+                return makeRoute('/api').confOverride({
+                  ignoreRootForControllerName: true
+                }).path('/robots').REST('index').path('/articles').REST('index');
+              });
+              return expect(routes).to.eql({
+                'GET /api/robots': 'RobotsController.index',
+                'GET /api/articles': 'ArticlesController.index'
               });
             });
           });
