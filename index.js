@@ -214,7 +214,7 @@
       route = _currentRoute.substr(1);
       routeFragments = _.clone(route).split('/');
       guessedControllerName = _.capitalize(_.camelCase(routeFragments.pop()));
-      if (routeFragments.length > 0) {
+      if (routeFragments.length > 0 && !_routeConf.ignoreRootForControllerName) {
         root = _routeConf.rootAsControllerPath ? (routeFragments.shift()) + "/" : '';
         prefix = _.map(routeFragments, function(path) {
           return _.capitalize(path);

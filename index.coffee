@@ -167,8 +167,9 @@ do ->
   _getControllerName = ->
     route = _currentRoute.substr(1)
     routeFragments = _.clone(route).split('/')
+
     guessedControllerName = _.capitalize(_.camelCase(routeFragments.pop()))
-    if routeFragments.length > 0
+    if routeFragments.length > 0 and not _routeConf.ignoreRootForControllerName
       root = if _routeConf.rootAsControllerPath then "#{routeFragments.shift()}/" else ''
       prefix =_.map(routeFragments, (path)-> _.capitalize(path)).join('')
       guessedControllerName = root + prefix + guessedControllerName
